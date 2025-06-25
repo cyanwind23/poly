@@ -1,0 +1,61 @@
+{{- range $appName, $appConfig := .Values }}
+{{- if $appConfig.enabled -}}
+{{- $appName := kebabcase $appName -}}
+{{- if not (mustHas $appName (list "default" "apps" "defaultApp")) -}}
+{{- $_ := set $appConfig "name" $appName -}}
+{{- $_ := set $ "currentApp" (mustMergeOverwrite (deepCopy $.Values.default) $appConfig) -}}
+
+{{- /* Deployment resources */}}
+{{- if eq $.currentApp.deployType "Deployment" -}}
+{{- include "poly.v3.deployment" $ }}
+{{- else if eq $.currentApp.deployType "StatefulSet" -}}
+{{- include "poly.v3.statefulset" $ }}
+{{- else if eq $.currentApp.deployType "DaemonSet" -}}
+{{- include "poly.v3.daemonset" $ }}
+{{- else if eq $.currentApp.deployType "CronJob" -}}
+{{- include "poly.v3.cronjob" $ }}
+{{- else if eq $.currentApp.deployType "Job" -}}
+{{- include "poly.v3.job" $ }}
+{{- end }}
+
+{{- /* Service resources */}}
+{{- $_ := set $.currentApp "currentSvc" $.currentApp.service -}}
+{{- include "poly.v3.service" $ -}}
+{{- range $svc := $.currentApp.service.extraServices }}
+{{- $_ := set $.currentApp "currentSvc" $svc -}}
+{{- include "poly.v3.service" $ -}}
+{{ end -}}
+
+{{- /* SA resources */}}
+{{- include "poly.v3.sa" $ -}}
+
+{{- /* Ingress resources */}}
+{{- $_ := set $.currentApp "currentIngress" $.currentApp.ingress -}}
+{{- include "poly.v3.ingress" $ -}}
+{{- range $ing := $.currentApp.ingress.extraIngresses }}
+{{- $_ := set $.currentApp "currentIngress" $ing -}}
+{{- include "poly.v3.ingress" $ -}}
+{{- end -}}
+
+{{- /* ConfigMap resources */}}
+{{- include "poly.v3.configmap" $ -}}
+{{- if eq $.currentApp.vault.template.type "configmap" -}}
+{{- include "poly.v3.vault.configmap" $ -}}
+{{- end -}}
+
+{{- /* PVC resources */}}
+{{- include "poly.v3.pvc" $ }}
+
+{{- /* HPA resources */}}
+{{- include "poly.v3.hpa" $ }}
+
+{{- /* ServiceMonitor resources */}}
+{{- include "poly.v3.servicemonitor" $ }}
+
+{{- /* Rollout resources */}}
+{{- include "poly.v3.rollout" $ }}
+
+{{- /* Rollout dynamic configmap */}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
