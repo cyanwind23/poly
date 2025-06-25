@@ -1,0 +1,17 @@
+apiVersion: v1
+entries:
+  poly:
+  - apiVersion: v2
+    appVersion: 1.0.0
+    created: "2025-06-25T15:04:21.885784574Z"
+    description: A Helm chart for deploying multi-service
+    digest: 6a9ff8db89f465acf889282807e1effced21760fea079ddcaceb98dc815746bf
+    maintainers:
+    - email: cyanwind23@gmail.com
+      name: ThienNam23
+    name: poly
+    type: application
+    urls:
+    - https://github.com/cyanwind23/poly/releases/download/poly-3.0.3/poly-3.0.3.tgz
+    version: 3.0.3
+generated: "2025-06-25T15:04:21.885790625Z"
