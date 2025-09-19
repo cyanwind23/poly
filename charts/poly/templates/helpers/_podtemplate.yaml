@@ -1,7 +1,7 @@
 {{- define "poly.v3.podTemplate" }}
 {{- $app := $.currentApp -}}
 metadata: {{- include "poly.v3.commonMetadata" $ | nindent 2 }}
-{{- with $app.vault.injectorLables }}
+{{- with $app.vault.injectorLabels }}
 {{- toYaml . | nindent 4 }}
 {{- end -}}
 {{- with mustMerge (fromYaml (include "poly.v3.vault.annotations" $)) $app.podAnnotations }}

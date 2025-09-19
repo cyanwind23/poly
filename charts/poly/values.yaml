@@ -208,18 +208,18 @@ default:
   #       port: 8080
   #       service: service-name
   probes:
-    livenessProbe:
-      httpGet:
-        request: /:http
-      params: "15:15:10:30:1"
-    readinessProbe:
-      httpGet:
-        request: /:http
-      params: "15::10::1"
-    startupProbe:
-      httpGet:
-        request: /:http
-      params: "::::"
+    livenessProbe: {}
+      # httpGet:
+      #   request: /:http
+      # params: "15:15:10:30:1"
+    readinessProbe: {}
+      # httpGet:
+      #   request: /:http
+      # params: "15::10::1"
+    startupProbe: {}
+      # httpGet:
+      #   request: /:http
+      # params: "::::"
   probesOverride: {}
 
   # More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/
@@ -234,7 +234,7 @@ default:
       #       value:
       # tcpSocket: host:8080
     preStop:
-      execCommand: ["sleep", "30"]
+      execCommand: ["sleep", "3"]
   lifecycleOverride: {}
 
   # Provide resources, format in example below, must have
@@ -439,7 +439,7 @@ default:
       runtimeArgs: []
       # command: ["/bin/sh", "-c"]
       # runtimeArgs: [". /vault/secrets/config.env && yarn start"]
-    injectorLables: {}
+    injectorLabels: {}
       # sidecar-injector: enabled
 
   serviceMonitor:
