@@ -3,6 +3,19 @@ entries:
   poly:
   - apiVersion: v2
     appVersion: 1.0.0
+    created: "2026-01-12T02:05:47.293328602Z"
+    description: A Helm chart for deploying multi-service
+    digest: 33837d0c53f0af0176d1316951c7cd1f99cf34f6410e568068e8f397bc512060
+    maintainers:
+    - email: cyanwind23@gmail.com
+      name: ThienNam23
+    name: poly
+    type: application
+    urls:
+    - https://github.com/cyanwind23/poly/releases/download/poly-3.0.5/poly-3.0.5.tgz
+    version: 3.0.5
+  - apiVersion: v2
+    appVersion: 1.0.0
     created: "2025-09-19T16:16:38.223359391Z"
     description: A Helm chart for deploying multi-service
     digest: 9843d4b19c686d88c5062b97d16b357403228509bb606d9b65c2836d31531b50
@@ -27,4 +40,4 @@ entries:
     urls:
     - https://github.com/cyanwind23/poly/releases/download/poly-3.0.3/poly-3.0.3.tgz
     version: 3.0.3
-generated: "2025-09-19T16:16:38.223367497Z"
+generated: "2026-01-12T02:05:47.293340585Z"
