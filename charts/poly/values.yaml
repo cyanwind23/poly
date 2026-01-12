@@ -53,13 +53,13 @@ default:
       # suspend: false
       # timezone: Asia/Bangkok
     job:
-      parallelism: 0
-      completions: 0
+      parallelism: 1
+      completions: 1
       completionMode: NonIndexed
       backoffLimit: 6
-      activeDeadlineSeconds: 0
-      ttlSecondsAfterFinished: 0
       suspend: false
+      # activeDeadlineSeconds: 0
+      # ttlSecondsAfterFinished: 0
     rollout:
       analysis:
         successfulRunHistoryLimit: 5
