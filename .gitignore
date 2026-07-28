@@ -1,0 +1,14 @@
+# Tracking & Internal planning files
+.tracking/
+TRACKING*.md
+*.local.md
+
+# Helm temporary files
+*.tgz
+.helm/
+charts/*.tgz
+
+# OS & Editor files
+.DS_Store
+.vscode/
+.idea/
