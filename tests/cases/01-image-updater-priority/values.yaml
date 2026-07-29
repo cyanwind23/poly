@@ -1,0 +1,46 @@
+# Test cases for TASK-04 (quickConfigs.registry vs image.tag vs image.repository priority)
+default:
+  disableProbes: ["all"]
+  service:
+    enabled: false
+
+app1:
+  enabled: true
+  quickConfigs:
+    registry: "myreg.com/my-app:v1.0.0"
+
+app2:
+  enabled: true
+  quickConfigs:
+    registry: "myreg.com/my-app:v1.0.0"
+  image:
+    tag: "v2.0.0"
+
+app3:
+  enabled: true
+  quickConfigs:
+    registry: "10.0.0.1:5000/internal-app:v1.0.0"
+  image:
+    tag: "v3.0.0"
+
+app4:
+  enabled: true
+  quickConfigs:
+    registry: "10.0.0.1:5000/no-tag-app"
+  image:
+    tag: "v4.0.0"
+
+app5:
+  enabled: true
+  quickConfigs:
+    registry: "myreg.com/default-app:v1.0.0"
+  image:
+    repository: "custom-repo/override-app"
+    tag: "v5.0.0"
+
+app6:
+  enabled: true
+  quickConfigs:
+    registry: "myreg.com/default-app:v1.0.0"
+  image:
+    repository: "custom-repo/override-app"

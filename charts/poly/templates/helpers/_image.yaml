@@ -1,0 +1,20 @@
+{{/*
+Render container image with precedence for ArgoCD Image Updater (TASK-04):
+1. Repo precedence: image.repository > quickConfigs.registry (repo part)
+2. Tag precedence:  image.tag > quickConfigs.registry (tag part)
+*/}}
+{{- define "poly.v3.image" -}}
+  {{- $app := $.currentApp -}}
+  {{- $reg := $app.quickConfigs.registry | default "" -}}
+  {{- $regTag := regexFind ":[^:/]+$" $reg | trimPrefix ":" -}}
+  {{- $regRepo := regexReplaceAll ":[^:/]+$" $reg "" -}}
+
+  {{- $repo := $app.image.repository | default $regRepo -}}
+  {{- $tag := $app.image.tag | toString | default $regTag -}}
+
+  {{- if $tag -}}
+    {{- printf "%s:%s" $repo $tag -}}
+  {{- else -}}
+    {{- $repo -}}
+  {{- end -}}
+{{- end -}}
