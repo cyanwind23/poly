@@ -1,0 +1,342 @@
+---
+# Source: poly/templates/main.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-release-app1
+  labels:
+    helm.sh/chart: poly-3.0.5
+    app.kubernetes.io/name: app1
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app1
+      app.kubernetes.io/instance: test-release
+  template:
+    metadata:
+      name: test-release-app1
+      labels:
+        helm.sh/chart: poly-3.0.5
+        app.kubernetes.io/name: app1
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      containers:
+        - image: myreg.com/my-app:v1.0.0
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - sleep
+                - "3"
+          name: app1
+          ports:
+          - containerPort: 80
+            name: http
+            protocol: TCP
+          resources: {}
+      imagePullSecrets: 
+        []
+      affinity: {}
+      nodeSelector: {}
+      tolerations: []
+      serviceAccountName: default
+      automountServiceAccountToken: true
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 0
+---
+# Source: poly/templates/main.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-release-app2
+  labels:
+    helm.sh/chart: poly-3.0.5
+    app.kubernetes.io/name: app2
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app2
+      app.kubernetes.io/instance: test-release
+  template:
+    metadata:
+      name: test-release-app2
+      labels:
+        helm.sh/chart: poly-3.0.5
+        app.kubernetes.io/name: app2
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      containers:
+        - image: myreg.com/my-app:v2.0.0
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - sleep
+                - "3"
+          name: app2
+          ports:
+          - containerPort: 80
+            name: http
+            protocol: TCP
+          resources: {}
+      imagePullSecrets: 
+        []
+      affinity: {}
+      nodeSelector: {}
+      tolerations: []
+      serviceAccountName: default
+      automountServiceAccountToken: true
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 0
+---
+# Source: poly/templates/main.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-release-app3
+  labels:
+    helm.sh/chart: poly-3.0.5
+    app.kubernetes.io/name: app3
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app3
+      app.kubernetes.io/instance: test-release
+  template:
+    metadata:
+      name: test-release-app3
+      labels:
+        helm.sh/chart: poly-3.0.5
+        app.kubernetes.io/name: app3
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      containers:
+        - image: 10.0.0.1:5000/internal-app:v3.0.0
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - sleep
+                - "3"
+          name: app3
+          ports:
+          - containerPort: 80
+            name: http
+            protocol: TCP
+          resources: {}
+      imagePullSecrets: 
+        []
+      affinity: {}
+      nodeSelector: {}
+      tolerations: []
+      serviceAccountName: default
+      automountServiceAccountToken: true
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 0
+---
+# Source: poly/templates/main.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-release-app4
+  labels:
+    helm.sh/chart: poly-3.0.5
+    app.kubernetes.io/name: app4
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app4
+      app.kubernetes.io/instance: test-release
+  template:
+    metadata:
+      name: test-release-app4
+      labels:
+        helm.sh/chart: poly-3.0.5
+        app.kubernetes.io/name: app4
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      containers:
+        - image: 10.0.0.1:5000/no-tag-app:v4.0.0
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - sleep
+                - "3"
+          name: app4
+          ports:
+          - containerPort: 80
+            name: http
+            protocol: TCP
+          resources: {}
+      imagePullSecrets: 
+        []
+      affinity: {}
+      nodeSelector: {}
+      tolerations: []
+      serviceAccountName: default
+      automountServiceAccountToken: true
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 0
+---
+# Source: poly/templates/main.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-release-app5
+  labels:
+    helm.sh/chart: poly-3.0.5
+    app.kubernetes.io/name: app5
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app5
+      app.kubernetes.io/instance: test-release
+  template:
+    metadata:
+      name: test-release-app5
+      labels:
+        helm.sh/chart: poly-3.0.5
+        app.kubernetes.io/name: app5
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      containers:
+        - image: custom-repo/override-app:v5.0.0
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - sleep
+                - "3"
+          name: app5
+          ports:
+          - containerPort: 80
+            name: http
+            protocol: TCP
+          resources: {}
+      imagePullSecrets: 
+        []
+      affinity: {}
+      nodeSelector: {}
+      tolerations: []
+      serviceAccountName: default
+      automountServiceAccountToken: true
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 0
+---
+# Source: poly/templates/main.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-release-app6
+  labels:
+    helm.sh/chart: poly-3.0.5
+    app.kubernetes.io/name: app6
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app6
+      app.kubernetes.io/instance: test-release
+  template:
+    metadata:
+      name: test-release-app6
+      labels:
+        helm.sh/chart: poly-3.0.5
+        app.kubernetes.io/name: app6
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      containers:
+        - image: custom-repo/override-app:v1.0.0
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - sleep
+                - ""
+          name: app6
+          ports:
+          - containerPort: 80
+            name: http
+            protocol: TCP
+          resources: {}
+      imagePullSecrets: 
+        []
+      affinity: {}
+      nodeSelector: {}
+      tolerations: []
+      serviceAccountName: default
+      automountServiceAccountToken: true
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 0
