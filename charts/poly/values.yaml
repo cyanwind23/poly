@@ -112,7 +112,7 @@ default:
   # More info: https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#image
   image:
     repository: ""
-    tag: "latest"
+    tag: ""
     # Values: IfNotPresent | Always | Never
     pullPolicy: IfNotPresent
     # Provide your image pull secrets, format in example below

@@ -57,7 +57,7 @@ spec:
 {{- define "poly.v3.container" }}
 {{- $app := $.currentApp -}}
 name: {{ $app.containerName | default (include "poly.v3.name" $) }}
-image: "{{ $app.image.repository | default $app.quickConfigs.registry }}:{{ $app.image.tag }}"
+image: {{ include "poly.v3.image" $ | quote }}
 imagePullPolicy: {{ $app.image.pullPolicy }}
 {{- include "poly.v3.container.cmd" $ }}
 ports: {{- include "poly.v3.container.ports" $ | nindent 2 }}

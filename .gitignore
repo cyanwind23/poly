@@ -12,3 +12,7 @@ charts/*.tgz
 .DS_Store
 .vscode/
 .idea/
+
+# Test generated actual outputs
+tests/cases/*/actual.yaml
+
