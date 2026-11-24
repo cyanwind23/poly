@@ -1,0 +1,64 @@
+default:
+  service:
+    enabled: false
+  image:
+    repository: myregistry.com/demo
+    tag: "v1.0.0"
+  probes:
+    livenessProbe:
+      httpGet:
+        request: /live:http
+      params: "10:10:5:3:1"
+    readinessProbe:
+      httpGet:
+        request: /ready:http
+      params: "5:5:3:3:1"
+
+# App 1: inherits default.probes (liveness + readiness) automatically
+app1InheritedProbes:
+  enabled: true
+
+# App 2: probes.enabled: false disables all inherited probes
+app2ProbesDisabled:
+  enabled: true
+  probes:
+    enabled: false
+
+# App 3: probes.readinessProbe.enabled: false disables only readiness while keeping liveness
+app3ReadinessDisabled:
+  enabled: true
+  probes:
+    readinessProbe:
+      enabled: false
+
+# App 4: shorthand quickConfigs.healthcheckPath + probes.livenessProbe.enabled: true (no explicit httpGet)
+app4ShorthandProbe:
+  enabled: true
+  quickConfigs:
+    healthcheckPath: "/healthz"
+  probes:
+    livenessProbe:
+      enabled: true
+      httpGet: null
+    readinessProbe:
+      enabled: false
+
+# App 5: deployType: Job with probes.enabled: true explicitly enables probes
+app5JobProbesEnabled:
+  enabled: true
+  deployType: Job
+  command: ["/bin/sh", "-c", "run-job.sh"]
+  probes:
+    enabled: true
+
+# App 6: probesOverride overrides default probes
+app6ProbesOverride:
+  enabled: true
+  probesOverride:
+    livenessProbe:
+      exec:
+        command:
+          - cat
+          - /tmp/healthy
+      initialDelaySeconds: 5
+      periodSeconds: 5

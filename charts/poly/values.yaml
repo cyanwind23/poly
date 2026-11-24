@@ -208,15 +208,19 @@ default:
   #       port: 8080
   #       service: service-name
   probes:
+    # enabled: true
     livenessProbe: {}
+      # enabled: true
       # httpGet:
       #   request: /:http
       # params: "15:15:10:30:1"
     readinessProbe: {}
+      # enabled: true
       # httpGet:
       #   request: /:http
       # params: "15::10::1"
     startupProbe: {}
+      # enabled: true
       # httpGet:
       #   request: /:http
       # params: "::::"

@@ -116,11 +116,19 @@ resources: {{- toYaml $app.resources | nindent 2 }}
 {{- if or (not $isJobOrCronJob) $app.lifecycleOverride $app.lifecycle.enabled -}}
 {{ include "poly.v3.container.lifecycle" $ }}
 {{- end -}}
-{{- if $app.probesOverride -}}
+{{- if $app.probesOverride }}
 {{ toYaml $app.probesOverride }}
-{{- else if or (not $isJobOrCronJob) $app.probes.enabled -}}
-{{- $_ := set $app.probes "healthcheckPath" $app.quickConfigs.healthcheckPath -}}
-{{ include "poly.v3.container.probes" $app.probes }}
+{{- else -}}
+{{- $probes := $app.probes | default dict -}}
+{{- $probesEnabled := not $isJobOrCronJob -}}
+{{- if hasKey $probes "enabled" -}}
+  {{- $probesEnabled = $probes.enabled -}}
+{{- end -}}
+{{- if $probesEnabled -}}
+{{- $probesCopy := deepCopy $probes -}}
+{{- $_ := set $probesCopy "healthcheckPath" $app.quickConfigs.healthcheckPath }}
+{{ include "poly.v3.container.probes" $probesCopy }}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 
@@ -270,18 +278,24 @@ tcpSocket:
 
 {{/* Container probes section */}}
 {{- define "poly.v3.container.probes" }}
-{{- with .livenessProbe }}
-{{- $_ := set . "healthcheckPath" $.healthcheckPath }}
-livenessProbe: {{- include "poly.v3.probe" . | nindent 2 }}
-{{- end -}}
-{{- with .readinessProbe }}
-{{- $_ := set . "healthcheckPath" $.healthcheckPath }}
-readinessProbe: {{- include "poly.v3.probe" . | nindent 2 }}
-{{- end -}}
-{{- with .startupProbe }}
-{{- $_ := set . "healthcheckPath" $.healthcheckPath }}
-startupProbe: {{- include "poly.v3.probe" . | nindent 2 }}
-{{- end -}}
+{{- range $k := list "livenessProbe" "readinessProbe" "startupProbe" }}
+{{- $p := get $ $k }}
+{{- if $p }}
+{{- if not (and (hasKey $p "enabled") (not $p.enabled)) }}
+{{- $hasHandler := or $p.httpGet $p.execCommand $p.tcpSocket $p.grpc }}
+{{- if and (not $hasHandler) $p.enabled $.healthcheckPath }}
+{{- $pCopy := deepCopy $p }}
+{{- $_ := set $pCopy "httpGet" (dict "request" (printf "%s:http" $.healthcheckPath)) }}
+{{- $_ := set $pCopy "healthcheckPath" $.healthcheckPath }}
+{{ $k }}: {{- include "poly.v3.probe" $pCopy | nindent 2 }}
+{{- else if $hasHandler }}
+{{- $pCopy := deepCopy $p }}
+{{- $_ := set $pCopy "healthcheckPath" $.healthcheckPath }}
+{{ $k }}: {{- include "poly.v3.probe" $pCopy | nindent 2 }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
 {{- end -}}
 
 {{- define "poly.v3.probe" }}
