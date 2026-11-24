@@ -29,7 +29,7 @@
   - **Kubernetes Gateway API**: Hỗ trợ gốc `HTTPRoute` và `GRPCRoute` (`gateway.networking.k8s.io/v1`).
   - **Cilium**: Hỗ trợ `CiliumNetworkPolicy` và `CiliumEnvoyConfig` (`cilium.io/v2`).
   - **Argo Rollouts**: Hỗ trợ chiến lược Blue-Green kèm Service & Ingress Preview.
-  - **External Secrets Operator**: Quản lý Secret qua `ExternalSecret` thay cho việc lưu trữ Secret thô trong Git.
+  - **External Secrets Operator (`external-secrets.io/v1`)**: Quản lý `SecretStore` / `ClusterSecretStore` và `ExternalSecret` thay cho việc lưu trữ Secret thô trong Git.
   - **HashiCorp Vault**: Tích hợp Vault Agent Injector tự động.
   - **Prometheus**: Hỗ trợ tạo nhanh `ServiceMonitor` để thu thập metrics.
 - **Schema Validation**: Tích hợp `values.schema.json` giúp phát hiện sớm lỗi sai kiểu dữ liệu hoặc giá trị không hợp lệ ngay từ bước `helm lint` / `helm template`.
@@ -196,9 +196,10 @@ Tương tự `pvcs[].mountPath`, bạn có thể khai báo `mountPath` trực ti
 - **ConfigMap (`configMaps[]`)**:
   - `create: true` (và `exists` không bật): Poly tạo mới `ConfigMap` tên `<releaseName>-<name>` (hoặc `fullName`), hỗ trợ `isFileType: true/false` và `data`.
   - `exists: true` (hoặc `create: false`): Mount `ConfigMap` có sẵn trên cluster.
-- **Secret (`secrets[]`)**:
+- **Secret (`secrets[]`) & `SecretStore` (`secretStores[]`)**:
   - `exists: true` (hoặc không bật `externalSecret.enabled`): Mount `Secret` đã tồn tại trên cluster.
-  - `externalSecret.enabled: true` (khi `exists` không bật): Poly sinh manifest `ExternalSecret` (`external-secrets.io/v1` mặc định, kế thừa `default.externalSecret`) để đồng bộ dữ liệu từ Secret Store về K8s Secret đích rồi mount vào container (nếu có `mountPath`).
+  - `externalSecret.enabled: true` (khi `exists` không bật): Poly sinh manifest `ExternalSecret` (`external-secrets.io/v1`, hỗ trợ `refreshPolicy`: `Periodic`/`CreatedOnce`/`OnChange`, `refreshInterval`, `secretStoreRef`, `target`, `data`, `dataFrom`, kế thừa `default.externalSecret`) để đồng bộ dữ liệu về K8s Secret đích rồi mount vào container (nếu có `mountPath`).
+  - `secretStores[]`: Khai báo `SecretStore` hoặc `ClusterSecretStore` (`external-secrets.io/v1`) hỗ trợ `provider` (`vault`, `aws`, `gcpsm`, `azurekv`, `kubernetes`, ...), `controller`, `retrySettings`, `refreshInterval`, `conditions`. Có thể khai báo trong block app hoặc dùng `deployType: None` để tạo store dùng chung cho cả release.
 - **Quy tắc đặt tên với tiền tố `-` (`-prefix` naming)**: Khi mount resource có sẵn (`exists: true` / `create: false`), nếu `name` bắt đầu bằng `-` (ví dụ: `-shared-cm`), Poly tự động ghép `<releaseName>-shared-cm`; nếu không có `-` (ví dụ: `external-cm`), tên được giữ nguyên. Nếu có `fullName`, Poly luôn ưu tiên `fullName`.
 - **Các tùy chọn mount hỗ trợ**: `mountPath`, `subPath`, `readOnly` (mặc định `true` cho quick-mount ConfigMap/Secret), `volumeName` (tùy chỉnh tên volume nếu cần, mặc định `cm-<name>` / `secret-<name>`), `defaultMode`, `optional`, và `items` (`key`, `path`).
 
@@ -236,6 +237,24 @@ poly:
         items:
           - key: raw-settings
             path: settings.json
+    secretStores:
+      # Tạo SecretStore dùng chung hoặc riêng cho app theo chuẩn external-secrets.io/v1
+      - name: -vault-backend
+        kind: SecretStore
+        retrySettings:
+          maxRetries: 5
+          retryInterval: "10s"
+        provider:
+          vault:
+            server: "https://vault.example.com"
+            path: "secret"
+            version: "v2"
+            auth:
+              kubernetes:
+                mountPath: "kubernetes"
+                role: "my-app-role"
+                serviceAccountRef:
+                  name: "default"
     secrets:
       # Đồng bộ Secret từ External Secrets Operator và mount một key qua subPath
       - name: db-creds

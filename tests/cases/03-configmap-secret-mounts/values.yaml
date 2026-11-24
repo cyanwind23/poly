@@ -60,7 +60,7 @@ appSecretExisting:
       exists: true
       mountPath: /etc/shared-tls
 
-# Scenario 5: ExternalSecret (inherits default secretStoreRef) with mountPath, subPath, items
+# Scenario 5: ExternalSecret (inherits default secretStoreRef, refreshPolicy: OnChange) with mountPath, subPath, items
 appExternalSecretMount:
   enabled: true
   secrets:
@@ -72,6 +72,8 @@ appExternalSecretMount:
           path: password
       externalSecret:
         enabled: true
+        refreshPolicy: OnChange
+        refreshInterval: ""
         target:
           creationPolicy: Owner
         data:
@@ -79,6 +81,44 @@ appExternalSecretMount:
             remoteRef:
               key: secret/data/db
               property: password
+
+# Scenario 8: Shared SecretStore & ClusterSecretStore (deployType: None, external-secrets.io/v1)
+sharedSecretStores:
+  enabled: true
+  deployType: None
+  secretStores:
+    - name: -vault-store
+      controller: "eso-main"
+      annotations:
+        app.example.com/managed-by: "{{ .Release.Name }}"
+      retrySettings:
+        maxRetries: 5
+        retryInterval: "10s"
+      provider:
+        vault:
+          server: "https://vault.example.com"
+          path: "secret"
+          version: "v2"
+          auth:
+            kubernetes:
+              mountPath: "kubernetes"
+              role: "demo-role"
+              serviceAccountRef:
+                name: "default"
+    - name: aws-cluster-store
+      kind: ClusterSecretStore
+      conditions:
+        - namespaces:
+            - "production"
+      provider:
+        aws:
+          service: SecretsManager
+          region: ap-southeast-1
+    - name: disabled-store
+      enabled: false
+      provider:
+        vault:
+          server: "https://disabled.example.com"
 
 # Scenario 6: Combined volumes + volumeMounts + pvcs + created & existing configMaps + ExternalSecret + existing secrets
 appCombinedMounts:

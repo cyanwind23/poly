@@ -559,7 +559,26 @@ spec:
       maxUnavailable: 25%
   progressDeadlineSeconds: 600
   revisionHistoryLimit: 0
-
+---
+# Source: poly/templates/main.yaml
+apiVersion: external-secrets.io/v1
+kind: ClusterSecretStore
+metadata:
+  name: aws-cluster-store
+  labels:
+    helm.sh/chart: poly-3.0.5
+    app.kubernetes.io/name: shared-secret-stores
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  conditions:
+    - namespaces:
+      - production
+  provider:
+    aws:
+      region: ap-southeast-1
+      service: SecretsManager
 
 
 ---
@@ -599,7 +618,7 @@ metadata:
     app.kubernetes.io/version: "1.0.0"
     app.kubernetes.io/managed-by: Helm
 spec:
-  refreshInterval: 1h
+  refreshPolicy: OnChange
   secretStoreRef:
     kind: ClusterSecretStore
     name: vault-backend
@@ -633,3 +652,33 @@ spec:
   dataFrom:
     - extract:
         key: secret/data/env-only
+---
+# Source: poly/templates/main.yaml
+apiVersion: external-secrets.io/v1
+kind: SecretStore
+metadata:
+  name: test-release-vault-store
+  labels:
+    helm.sh/chart: poly-3.0.5
+    app.kubernetes.io/name: shared-secret-stores
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    app.example.com/managed-by: "test-release"
+spec:
+  controller: "eso-main"
+  retrySettings:
+    maxRetries: 5
+    retryInterval: 10s
+  provider:
+    vault:
+      auth:
+        kubernetes:
+          mountPath: kubernetes
+          role: demo-role
+          serviceAccountRef:
+            name: default
+      path: secret
+      server: https://vault.example.com
+      version: v2

@@ -50,7 +50,8 @@
 {{- include "poly.v3.vault.configmap" $ -}}
 {{- end -}}
 
-{{- /* ExternalSecret resources */}}
+{{- /* External Secrets Operator resources */}}
+{{- include "poly.v3.secretStore" $ -}}
 {{- include "poly.v3.externalSecret" $ -}}
 
 {{- /* PVC resources */}}

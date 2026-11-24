@@ -422,14 +422,42 @@ default:
     #     hello-world-2
     #     ...
 
-  # Default ExternalSecret config (External Secrets Operator)
-  # More info: https://external-secrets.io/
+  # Default ExternalSecret config (External Secrets Operator - external-secrets.io/v1)
+  # More info: https://external-secrets.io/latest/api/externalsecret/
   externalSecret:
     apiVersion: external-secrets.io/v1
     refreshInterval: 1h
+    # refreshPolicy: Periodic # Values: Periodic | CreatedOnce | OnChange
     secretStoreRef: {}
       # name: vault-backend
       # kind: ClusterSecretStore
+
+  # SecretStore / ClusterSecretStore config (External Secrets Operator - external-secrets.io/v1)
+  # More info: https://external-secrets.io/latest/api/secretstore/
+  secretStores: []
+    # - name: vault-backend
+    #   # enabled: true
+    #   # kind: SecretStore # Values: SecretStore | ClusterSecretStore
+    #   # apiVersion: external-secrets.io/v1
+    #   # fullName: ""
+    #   # annotations: {}
+    #   # controller: ""
+    #   # refreshInterval: 0
+    #   # retrySettings:
+    #   #   maxRetries: 5
+    #   #   retryInterval: "10s"
+    #   # conditions: [] # ClusterSecretStore namespace selector conditions
+    #   provider:
+    #     vault:
+    #       server: "https://vault.example.com"
+    #       path: "secret"
+    #       version: "v2"
+    #       auth:
+    #         kubernetes:
+    #           mountPath: "kubernetes"
+    #           role: "my-app-role"
+    #           serviceAccountRef:
+    #             name: "default"
 
   # Secret config (mount existing Secrets or sync via ExternalSecret; raw data/stringData in Git is forbidden)
   secrets: []

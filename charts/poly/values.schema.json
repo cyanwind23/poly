@@ -331,7 +331,41 @@
           "properties": {
             "apiVersion": { "type": "string" },
             "refreshInterval": { "type": "string" },
+            "refreshPolicy": {
+              "type": "string",
+              "enum": ["Periodic", "CreatedOnce", "OnChange"]
+            },
             "secretStoreRef": { "type": "object" }
+          }
+        },
+        "secretStores": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "enabled": { "type": "boolean" },
+              "kind": {
+                "type": "string",
+                "enum": ["SecretStore", "ClusterSecretStore"]
+              },
+              "apiVersion": { "type": "string" },
+              "name": { "type": "string" },
+              "fullName": { "type": "string" },
+              "annotations": { "type": "object" },
+              "controller": { "type": "string" },
+              "refreshInterval": { "type": "integer", "minimum": 0 },
+              "retrySettings": {
+                "type": "object",
+                "additionalProperties": true,
+                "properties": {
+                  "maxRetries": { "type": "integer", "minimum": 0 },
+                  "retryInterval": { "type": "string" }
+                }
+              },
+              "conditions": { "type": "array", "items": { "type": "object" } },
+              "provider": { "type": "object" }
+            }
           }
         },
         "secrets": {
@@ -364,6 +398,10 @@
                   "apiVersion": { "type": "string" },
                   "name": { "type": "string" },
                   "refreshInterval": { "type": "string" },
+                  "refreshPolicy": {
+                    "type": "string",
+                    "enum": ["Periodic", "CreatedOnce", "OnChange"]
+                  },
                   "annotations": { "type": "object" },
                   "secretStoreRef": { "type": "object" },
                   "target": { "type": "object" },

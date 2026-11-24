@@ -30,7 +30,7 @@ tests/
 | :--- | :--- |
 | `01-image-updater-priority` | Kiểm thử độ ưu tiên giữa `image.repository` / `image.tag` và `quickConfigs.registry` (bao gồm registry có port). |
 | `02-job-cronjob-defaults` | Kiểm thử `Deployment`, `StatefulSet`, `DaemonSet`, `Job`, `CronJob` với `restartPolicy: OnFailure` và tắt mặc định `probes`/`service`/`ingress` cho Job/CronJob. |
-| `03-configmap-secret-mounts` | Kiểm thử mount nhanh `ConfigMap` (`create` / `exists`) và `Secret` (`exists` / `ExternalSecret` với `data` & `dataFrom`), bao gồm `mountPath`, `subPath`, `items`, `defaultMode`, `optional`, `-prefix` và kết hợp `volumes`/`pvcs`. |
+| `03-configmap-secret-mounts` | Kiểm thử mount nhanh `ConfigMap` (`create` / `exists`), `Secret` (`exists` / `ExternalSecret` v1 với `refreshPolicy`, `data` & `dataFrom`), và `SecretStore` / `ClusterSecretStore` (`external-secrets.io/v1`), bao gồm `mountPath`, `subPath`, `items`, `defaultMode`, `optional`, `-prefix` và kết hợp `volumes`/`pvcs`. |
 | `04-probes-toggle` | Kiểm thử kế thừa `default.probes`, tắt qua `probes.enabled: false`, tắt từng probe, shorthand `quickConfigs.healthcheckPath`, bật probe cho Job và `probesOverride`. |
 | `05-gateway-api-cilium` | Kiểm thử `HTTPRoute` (kèm `extraRoutes`), `GRPCRoute`, `CiliumNetworkPolicy` và `CiliumEnvoyConfig`. |
 | `06-core-workloads-advanced` | Kiểm thử `env` (`~cfm`, `~scr`, `~fr`, `~rfr`, plain), `envFrom` (`-prefix` & `secretRef`), `service` (`ports` + `extraServices`), `ingress` (`hosts` + `tls`), `autoscaling` (HPA), `serviceMonitor`, `serviceAccount` (`create` + `annotations`), `vault` (`template.type: annotation`) và `rollout` (blue-green + preview service/ingress). |
