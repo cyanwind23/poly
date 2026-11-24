@@ -1,0 +1,6 @@
+app:
+  enabled: true
+  deployType: InvalidWorkload
+  image:
+    repository: myregistry.com/demo
+    tag: "v1.0.0"

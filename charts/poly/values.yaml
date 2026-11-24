@@ -48,7 +48,7 @@ default:
       schedule: '*/10 * * * *'
       concurrencyPolicy: "Allow"
       successfulJobsHistoryLimit: 3
-      failedJobsHistoryLimit: 1
+      failedJobsHistoryLimit: 3
       # startingDeadlineSeconds: 0
       # suspend: false
       # timezone: Asia/Bangkok
@@ -208,15 +208,19 @@ default:
   #       port: 8080
   #       service: service-name
   probes:
+    # enabled: true
     livenessProbe: {}
+      # enabled: true
       # httpGet:
       #   request: /:http
       # params: "15:15:10:30:1"
     readinessProbe: {}
+      # enabled: true
       # httpGet:
       #   request: /:http
       # params: "15::10::1"
     startupProbe: {}
+      # enabled: true
       # httpGet:
       #   request: /:http
       # params: "::::"
@@ -393,6 +397,17 @@ default:
     # Is this configmap type file-config? If true, use second `data` format below
     isFileType: false
 
+    # Quick volume mount options (omit mountPath to skip mounting)
+    # mountPath: /etc/config
+    # subPath: app.conf
+    # readOnly: true
+    # volumeName: ""
+    # defaultMode: 420
+    # optional: false
+    # items:
+    #   - key: app.conf
+    #     path: app.conf
+
     # Provide data for normal configmap, optional
     #
     # data:
@@ -404,6 +419,30 @@ default:
     #     hello-world-1
     #     hello-world-2
     #     ...
+
+  # Secret config
+  secrets: []
+    # - name: main
+    #   create: false
+    #   # Provide secret fullname, the fixed name with highest priority, must be unique, optional
+    #   fullName: ""
+    #   type: Opaque
+    #   annotations: {}
+    #
+    #   # Quick volume mount options (omit mountPath to skip mounting)
+    #   mountPath: /etc/secrets
+    #   subPath: token
+    #   readOnly: true
+    #   volumeName: ""
+    #   defaultMode: 256
+    #   optional: false
+    #   items:
+    #     - key: token
+    #       path: token
+    #
+    #   # Provide base64-encoded data or plain-text stringData when create: true
+    #   data: {}
+    #   stringData: {}
 
   # Enable vault for your app
   #
@@ -453,3 +492,60 @@ default:
 
     # More info: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#servicemonitorspec
     extraConfig: {}
+
+  # Gateway API config (Kubernetes Gateway API v1)
+  # More info: https://gateway-api.sigs.k8s.io/
+  gatewayApi:
+    httpRoute:
+      enabled: false
+      name: ""
+      annotations: {}
+      parentRefs: []
+        # - name: main-gateway
+        #   namespace: gateway-system
+      hostnames: []
+        # - api.example.com
+      rules: []
+        # - matches:
+        #     - path:
+        #         type: PathPrefix
+        #         value: /
+      extraRoutes: []
+
+    grpcRoute:
+      enabled: false
+      name: ""
+      annotations: {}
+      parentRefs: []
+        # - name: grpc-gateway
+        #   namespace: gateway-system
+      hostnames: []
+        # - grpc.example.com
+      rules: []
+        # - matches:
+        #     - method:
+        #         service: my.package.Service
+      extraRoutes: []
+
+  # Cilium config (CiliumNetworkPolicy & CiliumEnvoyConfig)
+  # More info: https://docs.cilium.io/en/stable/security/policy/
+  cilium:
+    networkPolicy:
+      enabled: false
+      name: ""
+      annotations: {}
+      description: ""
+      endpointSelector: {}
+      ingress: []
+      ingressDeny: []
+      egress: []
+      egressDeny: []
+      specs: []
+
+    envoyConfig:
+      enabled: false
+      name: ""
+      annotations: {}
+      services: []
+      backendServices: []
+      resources: []

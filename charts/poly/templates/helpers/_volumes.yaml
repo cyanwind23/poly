@@ -1,0 +1,94 @@
+{{- define "poly.v3.quickMount.volumeName" -}}
+{{- .item.volumeName | default (printf "%s-%s" .prefix ((.item.name | default .item.fullName) | trimPrefix "-")) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{- define "poly.v3.quickMount.resourceName" -}}
+{{- if .item.fullName -}}
+{{- .item.fullName -}}
+{{- else if .item.create -}}
+{{- printf "%s-%s" .releaseName .item.name -}}
+{{- else -}}
+{{- ternary (printf "%s%s" .releaseName .item.name) .item.name (hasPrefix "-" .item.name) -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "poly.v3.pod.volumes" -}}
+{{- with (concat $.currentApp.volumes $.currentApp.extraVolumes) }}
+{{- toYaml . }}
+{{- end }}
+{{- range $pvc := $.currentApp.pvcs }}
+{{- if $pvc.mountPath }}
+- name: {{ $pvc.name }}
+  persistentVolumeClaim:
+    claimName: {{ $pvc.name }}
+{{- end }}
+{{- end }}
+{{- range $group := list (dict "items" $.currentApp.configMaps "prefix" "cm" "kind" "configMap" "nameKey" "name") (dict "items" $.currentApp.secrets "prefix" "secret" "kind" "secret" "nameKey" "secretName") }}
+{{- range $item := $group.items }}
+{{- if $item.mountPath }}
+{{- $volName := include "poly.v3.quickMount.volumeName" (dict "item" $item "prefix" $group.prefix) }}
+{{- $resName := include "poly.v3.quickMount.resourceName" (dict "item" $item "releaseName" $.Release.Name) }}
+- name: {{ $volName }}
+  {{ $group.kind }}:
+    {{ $group.nameKey }}: {{ $resName }}
+    {{- with $item.items }}
+    items: {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with $item.defaultMode }}
+    defaultMode: {{ . }}
+    {{- end }}
+    {{- if hasKey $item "optional" }}
+    optional: {{ $item.optional }}
+    {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end -}}
+
+{{/* Container volumeMounts section */}}
+{{- define "poly.v3.container.volumeMounts" }}
+{{- $app := $.currentApp -}}
+{{- range $val := (concat $app.volumeMounts $app.extraVolumeMounts) -}}
+{{- if kindIs "string" $val -}}
+{{- $params := concat (without (mustRegexSplit ":" $val -1) "\"\"" "''") (list "" "" "") }}
+- mountPath: {{ index $params 1 }}
+  name: {{ first $params }}
+  readOnly: {{ eq (index $params 2) "true" | default false }}
+  {{- with index $params 3 }}
+  subPath: {{ . }}
+  {{- end -}}
+  {{- with (index $params 4) }}
+  mountPropagation: {{ . }}
+  {{- end }}
+{{- else }}
+- mountPath: {{ .mountPath }}
+  name: {{ .name }}
+  readOnly: {{ .readOnly | default false }}
+  {{- with .subPath }}
+  subPath: {{ . }}
+  {{- end -}}
+  {{- with .mountPropagation }}
+  mountPropagation: {{ . }}
+  {{ end }}
+{{- end }}
+{{- end }}
+{{- range $pvc := $.currentApp.pvcs }}
+{{- if $pvc.mountPath }}
+- mountPath: {{ $pvc.mountPath }}
+  name: {{ $pvc.name }}
+{{- end }}
+{{- end }}
+{{- range $group := list (dict "items" $app.configMaps "prefix" "cm") (dict "items" $app.secrets "prefix" "secret") }}
+{{- range $item := $group.items }}
+{{- if $item.mountPath }}
+{{- $volName := include "poly.v3.quickMount.volumeName" (dict "item" $item "prefix" $group.prefix) }}
+- mountPath: {{ $item.mountPath }}
+  name: {{ $volName }}
+  readOnly: {{ if hasKey $item "readOnly" }}{{ $item.readOnly }}{{ else }}true{{ end }}
+  {{- with $item.subPath }}
+  subPath: {{ . }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end -}}
+{{- end }}

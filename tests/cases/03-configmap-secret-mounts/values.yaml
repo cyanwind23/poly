@@ -1,0 +1,107 @@
+default:
+  disableProbes: ["all"]
+  service:
+    enabled: false
+  image:
+    repository: myregistry.com/demo
+    tag: "v1.0.0"
+
+# Scenario 1: Created file-type ConfigMap with mountPath
+appCmCreatedFile:
+  enabled: true
+  configMaps:
+    - name: app-config
+      create: true
+      isFileType: true
+      mountPath: /etc/app/config
+      data:
+        config.yaml: |
+          port: 8080
+          env: prod
+
+# Scenario 2: Existing ConfigMap with mountPath, subPath, items, defaultMode, optional
+appCmExistingOptions:
+  enabled: true
+  configMaps:
+    - name: external-cm
+      create: false
+      mountPath: /etc/app/settings.json
+      subPath: settings.json
+      defaultMode: 420
+      optional: true
+      items:
+        - key: raw-settings
+          path: settings.json
+
+# Scenario 3: Existing ConfigMap with -prefix name
+appCmPrefixName:
+  enabled: true
+  configMaps:
+    - name: -shared-cm
+      create: false
+      mountPath: /etc/shared
+
+# Scenario 4: Existing Secret with mountPath, defaultMode, readOnly
+appSecretExisting:
+  enabled: true
+  secrets:
+    - name: tls-secret
+      create: false
+      mountPath: /etc/tls
+      defaultMode: 256
+      readOnly: true
+
+# Scenario 5: Created Secret with stringData, mountPath, subPath, items
+appSecretCreated:
+  enabled: true
+  secrets:
+    - name: db-creds
+      create: true
+      mountPath: /etc/db/password
+      subPath: password
+      items:
+        - key: db-pass
+          path: password
+      stringData:
+        db-pass: super-secret-password
+
+# Scenario 6: Combined volumes + volumeMounts + pvcs + configMaps + secrets
+appCombinedMounts:
+  enabled: true
+  volumes:
+    - name: scratch-vol
+      emptyDir: {}
+  volumeMounts:
+    - name: scratch-vol
+      mountPath: /tmp/scratch
+  pvcs:
+    - name: data-pvc
+      size: 1Gi
+      mountPath: /var/lib/data
+  configMaps:
+    - name: combined-cm
+      create: true
+      mountPath: /etc/combined/cm
+      data:
+        APP_ENV: staging
+  secrets:
+    - name: combined-secret
+      create: true
+      mountPath: /etc/combined/secret
+      readOnly: false
+      stringData:
+        API_KEY: abc123
+
+# Scenario 7: ConfigMap & Secret without mountPath (must NOT emit volumes or volumeMounts)
+appNoMounts:
+  enabled: true
+  configMaps:
+    - name: env-only-cm
+      create: true
+      data:
+        LOG_LEVEL: info
+  secrets:
+    - name: env-only-secret
+      create: true
+      stringData:
+        TOKEN: tok-123

@@ -1,0 +1,346 @@
+---
+# Source: poly/templates/main.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-release-my-agent-daemon-set
+  labels:
+    helm.sh/chart: poly-3.0.5
+    app.kubernetes.io/name: my-agent-daemon-set
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: my-agent-daemon-set
+    app.kubernetes.io/instance: test-release
+---
+# Source: poly/templates/main.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-release-my-api-deployment
+  labels:
+    helm.sh/chart: poly-3.0.5
+    app.kubernetes.io/name: my-api-deployment
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: my-api-deployment
+    app.kubernetes.io/instance: test-release
+---
+# Source: poly/templates/main.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-release-my-db-stateful-set
+  labels:
+    helm.sh/chart: poly-3.0.5
+    app.kubernetes.io/name: my-db-stateful-set
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: my-db-stateful-set
+    app.kubernetes.io/instance: test-release
+---
+# Source: poly/templates/main.yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: test-release-my-agent-daemon-set
+  labels:
+    helm.sh/chart: poly-3.0.5
+    app.kubernetes.io/name: my-agent-daemon-set
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: my-agent-daemon-set
+      app.kubernetes.io/instance: test-release
+  template:
+    metadata:
+      name: test-release-my-agent-daemon-set
+      labels:
+        helm.sh/chart: poly-3.0.5
+        app.kubernetes.io/name: my-agent-daemon-set
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      containers:
+        - image: myregistry.com/agent-service:v3.0.0
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - sleep
+                - "3"
+          name: my-agent-daemon-set
+          ports:
+          - containerPort: 8080
+            name: http
+            protocol: TCP
+          resources: {}
+      imagePullSecrets: 
+        []
+      affinity: {}
+      nodeSelector: {}
+      tolerations: []
+      restartPolicy: Always
+      serviceAccountName: default
+      automountServiceAccountToken: true
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  revisionHistoryLimit: 0
+---
+# Source: poly/templates/main.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-release-my-api-deployment
+  labels:
+    helm.sh/chart: poly-3.0.5
+    app.kubernetes.io/name: my-api-deployment
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: my-api-deployment
+      app.kubernetes.io/instance: test-release
+  template:
+    metadata:
+      name: test-release-my-api-deployment
+      labels:
+        helm.sh/chart: poly-3.0.5
+        app.kubernetes.io/name: my-api-deployment
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      containers:
+        - image: myregistry.com/api-service:v1.0.0
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - sleep
+                - "3"
+          name: my-api-deployment
+          ports:
+          - containerPort: 8080
+            name: http
+            protocol: TCP
+          resources: {}
+      imagePullSecrets: 
+        []
+      affinity: {}
+      nodeSelector: {}
+      tolerations: []
+      restartPolicy: Always
+      serviceAccountName: default
+      automountServiceAccountToken: true
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 0
+---
+# Source: poly/templates/main.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: test-release-my-db-stateful-set
+  labels:
+    helm.sh/chart: poly-3.0.5
+    app.kubernetes.io/name: my-db-stateful-set
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  serviceName: test-release-my-db-stateful-set
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: my-db-stateful-set
+      app.kubernetes.io/instance: test-release
+  template:
+    metadata:
+      name: test-release-my-db-stateful-set
+      labels:
+        helm.sh/chart: poly-3.0.5
+        app.kubernetes.io/name: my-db-stateful-set
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      containers:
+        - image: myregistry.com/db-service:v2.0.0
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - sleep
+                - "3"
+          name: my-db-stateful-set
+          ports:
+          - containerPort: 8080
+            name: http
+            protocol: TCP
+          resources: {}
+      imagePullSecrets: 
+        []
+      affinity: {}
+      nodeSelector: {}
+      tolerations: []
+      restartPolicy: Always
+      serviceAccountName: default
+      automountServiceAccountToken: true
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  replicas: 1
+  revisionHistoryLimit: 0
+---
+# Source: poly/templates/main.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: test-release-my-migration-job
+  labels:
+    helm.sh/chart: poly-3.0.5
+    app.kubernetes.io/name: my-migration-job
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  template:
+    metadata:
+      name: test-release-my-migration-job
+      labels:
+        helm.sh/chart: poly-3.0.5
+        app.kubernetes.io/name: my-migration-job
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      containers:
+        - command:
+          - /bin/sh
+          - -c
+          - migrate.sh
+          image: myregistry.com/db-migrator:v1.0.0
+          imagePullPolicy: IfNotPresent
+          name: my-migration-job
+          ports:
+          - containerPort: 8080
+            name: http
+            protocol: TCP
+          resources: {}
+      imagePullSecrets: 
+        []
+      affinity: {}
+      nodeSelector: {}
+      tolerations: []
+      restartPolicy: OnFailure
+      serviceAccountName: default
+      automountServiceAccountToken: true
+  backoffLimit: 6
+  completionMode: NonIndexed
+  completions: 1
+  parallelism: 1
+  suspend: false
+
+
+
+---
+# Source: poly/templates/main.yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: test-release-my-daily-backup-cron-job
+  labels:
+    helm.sh/chart: poly-3.0.5
+    app.kubernetes.io/name: my-daily-backup-cron-job
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  concurrencyPolicy: Allow
+  failedJobsHistoryLimit: 3
+  schedule: 0 2 * * *
+  successfulJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      name: test-release-my-daily-backup-cron-job
+      labels:
+        helm.sh/chart: poly-3.0.5
+        app.kubernetes.io/name: my-daily-backup-cron-job
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      template:
+        metadata:
+          name: test-release-my-daily-backup-cron-job
+          labels:
+            helm.sh/chart: poly-3.0.5
+            app.kubernetes.io/name: my-daily-backup-cron-job
+            app.kubernetes.io/instance: test-release
+            app.kubernetes.io/version: "1.0.0"
+            app.kubernetes.io/managed-by: Helm
+        spec:
+          containers:
+            - image: myregistry.com/db-backup:v2.1.0
+              imagePullPolicy: IfNotPresent
+              name: my-daily-backup-cron-job
+              ports:
+              - containerPort: 8080
+                name: http
+                protocol: TCP
+              resources: {}
+          imagePullSecrets: 
+            []
+          affinity: {}
+          nodeSelector: {}
+          tolerations: []
+          restartPolicy: OnFailure
+          serviceAccountName: default
+          automountServiceAccountToken: true
+      backoffLimit: 6
+      completionMode: NonIndexed
+      completions: 1
+      parallelism: 1
+      suspend: false

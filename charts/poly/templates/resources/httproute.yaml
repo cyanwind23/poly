@@ -1,0 +1,87 @@
+{{- define "poly.v3.gatewayRoute" -}}
+{{- $ctx := get . "ctx" -}}
+{{- $route := get . "route" -}}
+{{- $kind := get . "kind" -}}
+{{- $app := $ctx.currentApp -}}
+{{- $routeName := include "poly.v3.fullname" $ctx -}}
+{{- if $route.name -}}
+{{- $routeName = include "poly.v3.prefixName" (dict "Release" $ctx.Release "prefixName" $route.name) -}}
+{{- end -}}
+{{- $svcName := include "poly.v3.fullname" $ctx -}}
+{{- $firstPort := "" -}}
+{{- if $app.service.ports -}}
+{{- $firstPort = first (mustRegexSplit ":" ((first $app.service.ports) | toString) -1) -}}
+{{- end -}}
+{{- $svcPort := ($firstPort | default $app.quickConfigs.port) | int -}}
+{{- $defaultBackendRefs := list (dict "name" $svcName "port" $svcPort) }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: {{ $kind }}
+metadata:
+  name: {{ $routeName }}
+  labels: {{- include "poly.v3.labels" $ctx | nindent 4 }}
+  {{- with $route.annotations }}
+  annotations: {{- include "poly.v3.tpl-dict" (dict "ctx" $ctx "dict" .) | trim | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with $route.parentRefs }}
+  parentRefs: {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- if $route.hostnames }}
+  hostnames: {{- toYaml $route.hostnames | nindent 4 }}
+  {{- else if $app.quickConfigs.domain }}
+  hostnames: {{- toYaml (list $app.quickConfigs.domain) | nindent 4 }}
+  {{- end }}
+  {{- if $route.rules }}
+  rules:
+    {{- range $rule := $route.rules }}
+    {{- $renderedRule := deepCopy $rule }}
+    {{- if not $renderedRule.backendRefs }}
+    {{- $_ := set $renderedRule "backendRefs" $defaultBackendRefs }}
+    {{- end }}
+    {{- toYaml (list $renderedRule) | nindent 4 }}
+    {{- end }}
+  {{- else if eq $kind "HTTPRoute" }}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: {{ $svcName }}
+          port: {{ $svcPort }}
+  {{- else }}
+  rules:
+    - backendRefs:
+        - name: {{ $svcName }}
+          port: {{ $svcPort }}
+  {{- end }}
+{{- end -}}
+
+{{- define "poly.v3.httproute" -}}
+{{- $app := $.currentApp -}}
+{{- if $app.enabled -}}
+{{- $gw := $app.gatewayApi | default dict -}}
+{{- $primary := $gw.httpRoute | default dict -}}
+{{- $routes := concat (list $primary) ($primary.extraRoutes | default list) -}}
+{{- range $route := $routes -}}
+{{- if $route.enabled -}}
+{{- include "poly.v3.gatewayRoute" (dict "ctx" $ "route" $route "kind" "HTTPRoute") -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "poly.v3.grpcroute" -}}
+{{- $app := $.currentApp -}}
+{{- if $app.enabled -}}
+{{- $gw := $app.gatewayApi | default dict -}}
+{{- $primary := $gw.grpcRoute | default dict -}}
+{{- $routes := concat (list $primary) ($primary.extraRoutes | default list) -}}
+{{- range $route := $routes -}}
+{{- if $route.enabled -}}
+{{- include "poly.v3.gatewayRoute" (dict "ctx" $ "route" $route "kind" "GRPCRoute") -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
