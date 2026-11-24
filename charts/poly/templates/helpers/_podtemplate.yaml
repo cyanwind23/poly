@@ -30,7 +30,7 @@ spec:
   volumes: {{- . | nindent 2 }}
   {{- end -}}
   {{- with $.currentApp.schedule }}
-  {{- include "poly.v3.pod.schedule" $ | nindent 2 -}}
+  {{- toYaml . | nindent 2 }}
   {{- end -}}
   {{- with $app.podLifecycle -}}{{- toYaml . | nindent 2 }}{{- end }}
   {{- with $app.hostAliases }}
@@ -42,7 +42,3 @@ spec:
   {{- toYaml . | nindent 2 }}
   {{- end -}}
 {{- end -}}
-
-{{- define "poly.v3.pod.schedule" -}}
-{{- toYaml $.currentApp.schedule -}}
-{{- end }}

@@ -8,7 +8,7 @@
 {{- else if .item.create -}}
 {{- printf "%s-%s" .releaseName .item.name -}}
 {{- else -}}
-{{- ternary (printf "%s%s" .releaseName .item.name) .item.name (hasPrefix "-" .item.name) -}}
+{{- include "poly.v3.prefixName" (dict "Release" (dict "Name" .releaseName) "prefixName" .item.name) -}}
 {{- end -}}
 {{- end -}}
 
@@ -45,32 +45,24 @@
 {{- end }}
 {{- end -}}
 
-{{/* Container volumeMounts section */}}
-{{- define "poly.v3.container.volumeMounts" }}
+{{/* Container volumeMounts (supports map, "name:mountPath:readOnly:subPath:mountPropagation", PVCs, ConfigMaps, Secrets) */}}
+{{- define "poly.v3.container.volumeMounts" -}}
 {{- $app := $.currentApp -}}
-{{- range $val := (concat $app.volumeMounts $app.extraVolumeMounts) -}}
-{{- if kindIs "string" $val -}}
-{{- $params := concat (without (mustRegexSplit ":" $val -1) "\"\"" "''") (list "" "" "") }}
-- mountPath: {{ index $params 1 }}
-  name: {{ first $params }}
-  readOnly: {{ eq (index $params 2) "true" | default false }}
-  {{- with index $params 3 }}
+{{- range $val := (concat $app.volumeMounts $app.extraVolumeMounts) }}
+{{- $m := $val -}}
+{{- if kindIs "string" $val }}
+  {{- $p := concat (without (splitList ":" $val) "\"\"" "''") (list "" "" "" "") -}}
+  {{- $m = dict "name" (index $p 0) "mountPath" (index $p 1) "readOnly" (eq (index $p 2) "true") "subPath" (index $p 3) "mountPropagation" (index $p 4) -}}
+{{- end }}
+- mountPath: {{ $m.mountPath }}
+  name: {{ $m.name }}
+  readOnly: {{ $m.readOnly | default false }}
+  {{- with $m.subPath }}
   subPath: {{ . }}
-  {{- end -}}
-  {{- with (index $params 4) }}
+  {{- end }}
+  {{- with $m.mountPropagation }}
   mountPropagation: {{ . }}
   {{- end }}
-{{- else }}
-- mountPath: {{ .mountPath }}
-  name: {{ .name }}
-  readOnly: {{ .readOnly | default false }}
-  {{- with .subPath }}
-  subPath: {{ . }}
-  {{- end -}}
-  {{- with .mountPropagation }}
-  mountPropagation: {{ . }}
-  {{ end }}
-{{- end }}
 {{- end }}
 {{- range $pvc := $.currentApp.pvcs }}
 {{- if $pvc.mountPath }}

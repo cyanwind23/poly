@@ -8,11 +8,7 @@
 {{- $routeName = include "poly.v3.prefixName" (dict "Release" $ctx.Release "prefixName" $route.name) -}}
 {{- end -}}
 {{- $svcName := include "poly.v3.fullname" $ctx -}}
-{{- $firstPort := "" -}}
-{{- if $app.service.ports -}}
-{{- $firstPort = first (mustRegexSplit ":" ((first $app.service.ports) | toString) -1) -}}
-{{- end -}}
-{{- $svcPort := ($firstPort | default $app.quickConfigs.port) | int -}}
+{{- $svcPort := (include "poly.v3.primaryPort" $ctx) | int -}}
 {{- $defaultBackendRefs := list (dict "name" $svcName "port" $svcPort) }}
 ---
 apiVersion: gateway.networking.k8s.io/v1

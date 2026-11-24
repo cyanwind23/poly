@@ -1,76 +1,72 @@
 {{/* Container lifecycle section */}}
-{{- define "poly.v3.container.lifecycle" }}
-{{ $app := $.currentApp }}
-{{ if $app.lifecycleOverride }}
+{{- define "poly.v3.container.lifecycle" -}}
+{{- $app := $.currentApp -}}
+{{- if $app.lifecycleOverride }}
 lifecycle: {{ toYaml $app.lifecycleOverride | nindent 2 }}
-{{ else if or $app.lifecycle.postStart $app.lifecycle.preStop }}
+{{- else if or $app.lifecycle.postStart $app.lifecycle.preStop }}
 lifecycle:
-{{ with $app.lifecycle.postStart }}
-  postStart: {{ include "poly.v3.lifecycleHandler" . | nindent 4 }}
-{{ end }}
-{{ with $app.lifecycle.preStop }}
-  preStop: {{ include "poly.v3.lifecycleHandler" . | nindent 4 }}
-{{ end }}
-{{ end }}
-{{ end }}
-
-{{- define "poly.v3.lifecycleHandler" }}
-{{ with .execCommand }}
-exec:
-  command: {{ toYaml . | nindent 4 }}
-{{ end }}
-{{ with .httpGet }}
-{{ $params := concat (without (mustRegexSplit ":" .request -1) "\"\"" "''") (list "" "") }}
-httpGet:
-  path: {{ $.healthcheckPath | default (first $params) }}
-  port: {{ index $params 1 }}
-  {{ with index $params 2 }}
-  host: {{ . }}
-  {{ end }}
-  scheme: {{ index $params 3 | default "HTTP" }}
-  {{ with .httpHeaders }}
-  httpHeaders: {{ toYaml . | nindent 4 }}
-  {{ end }}
-{{ end }}
-{{ with .tcpSocket }}
-{{ $params := mustRegexSplit ":" . -1 }}
-tcpSocket:
-  host: {{ first $params }}
-  port: {{ index $params 1 }}
-{{ end }}
-{{ end }}
-
-{{/* Container probes section */}}
-{{- define "poly.v3.container.probes" }}
-{{- range $k := list "livenessProbe" "readinessProbe" "startupProbe" }}
-{{- $p := get $ $k }}
-{{- if $p }}
-{{- if not (and (hasKey $p "enabled") (not $p.enabled)) }}
-{{- $hasHandler := or $p.httpGet $p.execCommand $p.tcpSocket $p.grpc }}
-{{- if and (not $hasHandler) $p.enabled $.healthcheckPath }}
-{{- $pCopy := deepCopy $p }}
-{{- $_ := set $pCopy "httpGet" (dict "request" (printf "%s:http" $.healthcheckPath)) }}
-{{- $_ := set $pCopy "healthcheckPath" $.healthcheckPath }}
-{{ $k }}: {{- include "poly.v3.probe" $pCopy | nindent 2 }}
-{{- else if $hasHandler }}
-{{- $pCopy := deepCopy $p }}
-{{- $_ := set $pCopy "healthcheckPath" $.healthcheckPath }}
-{{ $k }}: {{- include "poly.v3.probe" $pCopy | nindent 2 }}
-{{- end }}
-{{- end }}
-{{- end }}
-{{- end }}
+  {{- with $app.lifecycle.postStart }}
+  postStart: {{- include "poly.v3.lifecycleHandler" . | nindent 4 }}
+  {{- end }}
+  {{- with $app.lifecycle.preStop }}
+  preStop: {{- include "poly.v3.lifecycleHandler" . | nindent 4 }}
+  {{- end }}
+{{- end -}}
 {{- end -}}
 
-{{- define "poly.v3.probe" }}
-{{ include "poly.v3.lifecycleHandler" . }}
-{{ $params := (without (mustRegexSplit ":" .params -1) "\"\"" "''") }}
-initialDelaySeconds: {{ first $params | default 15 }}
-periodSeconds: {{ index $params 1 | default 15 }}
-timeoutSeconds: {{ index $params 2 | default 10 }}
-failureThreshold: {{ index $params 3 | default 30 }}
-successThreshold: {{ index $params 4 | default 1 }}
+{{- define "poly.v3.lifecycleHandler" -}}
+{{- with .execCommand }}
+exec:
+  command: {{ toYaml . | nindent 4 }}
+{{- end -}}
+{{- with .httpGet -}}
+{{- $p := concat (without (splitList ":" .request) "\"\"" "''") (list "" "") }}
+httpGet:
+  path: {{ $.healthcheckPath | default (first $p) }}
+  port: {{ index $p 1 }}
+  {{- with index $p 2 }}
+  host: {{ . }}
+  {{- end }}
+  scheme: {{ index $p 3 | default "HTTP" }}
+  {{- with .httpHeaders }}
+  httpHeaders: {{ toYaml . | nindent 4 }}
+  {{- end }}
+{{- end -}}
+{{- with .tcpSocket -}}
+{{- $p := splitList ":" . }}
+tcpSocket:
+  host: {{ first $p }}
+  port: {{ index $p 1 }}
+{{- end -}}
+{{- end -}}
+
+{{/* Container probes section */}}
+{{- define "poly.v3.container.probes" -}}
+{{- range $k := list "livenessProbe" "readinessProbe" "startupProbe" -}}
+{{- $p := get $ $k -}}
+{{- if and $p (not (and (hasKey $p "enabled") (not $p.enabled))) -}}
+  {{- $hasHandler := or $p.httpGet $p.execCommand $p.tcpSocket $p.grpc -}}
+  {{- $useShorthand := and (not $hasHandler) $p.enabled $.healthcheckPath -}}
+  {{- if or $hasHandler $useShorthand }}
+    {{- $cfg := merge (deepCopy $p) (dict "healthcheckPath" $.healthcheckPath) -}}
+    {{- if $useShorthand -}}
+      {{- $_ := set $cfg "httpGet" (dict "request" (printf "%s:http" $.healthcheckPath)) -}}
+    {{- end }}
+{{ $k }}: {{- include "poly.v3.probe" $cfg | nindent 2 }}
+  {{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "poly.v3.probe" -}}
+{{- include "poly.v3.lifecycleHandler" . }}
+{{- $p := without (splitList ":" .params) "\"\"" "''" }}
+initialDelaySeconds: {{ first $p | default 15 }}
+periodSeconds: {{ index $p 1 | default 15 }}
+timeoutSeconds: {{ index $p 2 | default 10 }}
+failureThreshold: {{ index $p 3 | default 30 }}
+successThreshold: {{ index $p 4 | default 1 }}
 {{- with .grpc }}
 grpc: {{- toYaml . | nindent 2 }}
 {{- end -}}
-{{ end }}
+{{- end -}}
