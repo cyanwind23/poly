@@ -1,5 +1,11 @@
 {{- define "poly.v3.podTemplate" }}
 {{- $app := $.currentApp -}}
+{{- $isJobOrCronJob := mustHas $app.deployType (list "Job" "CronJob") -}}
+{{- if not (hasKey $app.podLifecycle "restartPolicy") -}}
+  {{- $_ := set $app.podLifecycle "restartPolicy" (ternary "OnFailure" "Always" $isJobOrCronJob) -}}
+{{- else if and $isJobOrCronJob (eq $app.podLifecycle.restartPolicy "Always") -}}
+  {{- $_ := set $app.podLifecycle "restartPolicy" "OnFailure" -}}
+{{- end -}}
 metadata: {{- include "poly.v3.commonMetadata" $ | nindent 2 }}
 {{- with $app.vault.injectorLabels }}
 {{- toYaml . | nindent 4 }}
@@ -72,10 +78,13 @@ envFrom: {{- include "poly.v3.container.envFrom" $ | nindent 2 }}
 volumeMounts: {{- $volumeMounts | nindent 2 }}
 {{- end }}
 resources: {{- toYaml $app.resources | nindent 2 }}
+{{- $isJobOrCronJob := mustHas $app.deployType (list "Job" "CronJob") -}}
+{{- if or (not $isJobOrCronJob) $app.lifecycleOverride $app.lifecycle.enabled -}}
 {{ include "poly.v3.container.lifecycle" $ }}
+{{- end -}}
 {{- if $app.probesOverride -}}
 {{ toYaml $app.probesOverride }}
-{{- else -}}
+{{- else if or (not $isJobOrCronJob) $app.probes.enabled -}}
 {{- $_ := set $app.probes "healthcheckPath" $app.quickConfigs.healthcheckPath -}}
 {{ include "poly.v3.container.probes" $app.probes }}
 {{- end -}}
@@ -288,3 +297,5 @@ grpc: {{- toYaml . | nindent 2 }}
 {{- end }}
 {{- end -}}
 {{- end }}
+
+

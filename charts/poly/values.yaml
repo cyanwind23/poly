@@ -48,7 +48,7 @@ default:
       schedule: '*/10 * * * *'
       concurrencyPolicy: "Allow"
       successfulJobsHistoryLimit: 3
-      failedJobsHistoryLimit: 1
+      failedJobsHistoryLimit: 3
       # startingDeadlineSeconds: 0
       # suspend: false
       # timezone: Asia/Bangkok

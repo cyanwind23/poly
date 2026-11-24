@@ -2,8 +2,10 @@
 # ==============================================================================
 # Poly Helm Chart - Regression Test Suite Runner
 # Usage:
-#   ./tests/run-tests.sh          # Run all tests and compare with expected output
-#   ./tests/run-tests.sh --update # Update expected golden files with current output
+#   ./tests/run-tests.sh                        # Run all test cases
+#   ./tests/run-tests.sh <case_name>            # Run a specific test case (e.g. 02-job-cronjob-defaults)
+#   ./tests/run-tests.sh --update               # Update golden expected files for all cases
+#   ./tests/run-tests.sh <case_name> --update   # Update golden file for a specific case
 # ==============================================================================
 
 set -euo pipefail
@@ -14,8 +16,17 @@ CHART_DIR="${REPO_ROOT}/charts/poly"
 CASES_DIR="${SCRIPT_DIR}/cases"
 
 UPDATE_MODE=false
-if [[ "${1:-}" == "--update" ]]; then
-  UPDATE_MODE=true
+CASE_FILTER=""
+
+for arg in "$@"; do
+  if [[ "${arg}" == "--update" || "${arg}" == "-u" ]]; then
+    UPDATE_MODE=true
+  else
+    CASE_FILTER="${arg}"
+  fi
+done
+
+if [[ "${UPDATE_MODE}" == true ]]; then
   echo "🔄 Update mode enabled: Golden expected files will be overwritten."
 fi
 
@@ -23,11 +34,22 @@ FAILED_COUNT=0
 PASSED_COUNT=0
 
 echo "🚀 Starting Poly Helm Template Regression Tests..."
+if [[ -n "${CASE_FILTER}" ]]; then
+  echo "🔍 Filtering test case(s) matching: [${CASE_FILTER}]"
+fi
 echo "--------------------------------------------------------"
 
+MATCH_FOUND=false
 for test_dir in "${CASES_DIR}"/*; do
   if [[ -d "${test_dir}" ]]; then
     case_name="$(basename "${test_dir}")"
+
+    # Apply filter if specified
+    if [[ -n "${CASE_FILTER}" && "${case_name}" != *"${CASE_FILTER}"* ]]; then
+      continue
+    fi
+
+    MATCH_FOUND=true
     values_file="${test_dir}/values.yaml"
     expected_file="${test_dir}/expected.yaml"
     actual_file="${test_dir}/actual.yaml"
@@ -67,6 +89,11 @@ for test_dir in "${CASES_DIR}"/*; do
     fi
   fi
 done
+
+if [[ "${MATCH_FOUND}" == false ]]; then
+  echo "⚠️ No test case found matching filter: '${CASE_FILTER}'"
+  exit 1
+fi
 
 echo "--------------------------------------------------------"
 if [[ ${FAILED_COUNT} -gt 0 ]]; then
