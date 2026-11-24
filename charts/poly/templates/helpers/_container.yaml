@@ -1,0 +1,139 @@
+{{- define "poly.v3.container" }}
+{{- $app := $.currentApp -}}
+name: {{ $app.containerName | default (include "poly.v3.name" $) }}
+image: {{ include "poly.v3.image" $ | quote }}
+imagePullPolicy: {{ $app.image.pullPolicy }}
+{{- include "poly.v3.container.cmd" $ }}
+ports: {{- include "poly.v3.container.ports" $ | nindent 2 }}
+{{- with $app.env }}
+env: {{- include "poly.v3.container.env" $ | indent 2 }}
+{{- end -}}
+{{- with $app.envFrom }}
+envFrom: {{- include "poly.v3.container.envFrom" $ | nindent 2 }}
+{{- end -}}
+{{ $volumeMounts := (include "poly.v3.container.volumeMounts" $) | trimAll "\n" }}
+{{ if $volumeMounts }}
+volumeMounts: {{- $volumeMounts | nindent 2 }}
+{{- end }}
+resources: {{- toYaml $app.resources | nindent 2 }}
+{{- $isJobOrCronJob := mustHas $app.deployType (list "Job" "CronJob") -}}
+{{- if or (not $isJobOrCronJob) $app.lifecycleOverride $app.lifecycle.enabled -}}
+{{ include "poly.v3.container.lifecycle" $ }}
+{{- end -}}
+{{- if $app.probesOverride }}
+{{ toYaml $app.probesOverride }}
+{{- else -}}
+{{- $probes := $app.probes | default dict -}}
+{{- $probesEnabled := not $isJobOrCronJob -}}
+{{- if hasKey $probes "enabled" -}}
+  {{- $probesEnabled = $probes.enabled -}}
+{{- end -}}
+{{- if $probesEnabled -}}
+{{- $probesCopy := deepCopy $probes -}}
+{{- $_ := set $probesCopy "healthcheckPath" $app.quickConfigs.healthcheckPath }}
+{{ include "poly.v3.container.probes" $probesCopy }}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/* Container cmd section */}}
+{{- define "poly.v3.container.cmd" }}
+{{- $app := $.currentApp -}}
+{{- $vault := $.currentApp.vault -}}
+{{- $cmd := ternary $vault.runContainer $app $vault.enabled -}}
+{{- with $cmd.command }}
+command: {{- toYaml . | nindent 2 }}
+{{- end -}}
+{{- with $cmd.runtimeArgs }}
+args: {{- toYaml . | nindent 2 }}
+{{- end -}}
+{{- end -}}
+
+{{/* Container ports section */}}
+{{- define "poly.v3.container.ports" }}
+{{- $app := $.currentApp -}}
+{{- range $port := $app.ports | default (list $app.quickConfigs.port) }}
+{{- if kindIs "map" $port -}}
+- containerPort: {{ $port.containerPort }}
+  name: {{ $port.name | default "http" }}
+  protocol: {{ $port.protocol | default "TCP" }}
+  {{- with $port.hostIP }}
+  hostIP: {{ . }}
+  {{- end -}}
+  {{- with $port.hostPort }}
+  hostPort: {{ . }}
+  {{- end -}}
+{{- else -}}
+{{- $params := concat (without (mustRegexSplit ":" (. | toString) -1) "\"\"" "''") (list "" "") -}}
+- containerPort: {{ first $params }}
+  name: {{ index $params 1 | default "http" }}
+  protocol: {{ index $params 2 | default "TCP" }}
+{{ end }}
+{{- end }}
+{{- end -}}
+
+{{/* Container envFrom env */}}
+{{- define "poly.v3.container.env" }}
+{{- range $key, $val := $.currentApp.env }}
+- name: {{ $key | quote }}
+{{ if not (hasPrefix "~" $val) }}
+  value: {{ $val | quote }}
+{{ else }}
+{{ $params := (mustRegexSplit ":" ((trimPrefix "~" $val) | toString) -1) }}
+  valueFrom:
+  {{ if eq (first $params) "cfm" }}
+    configMapKeyRef:
+      key: {{ index $params 1 }}
+      name: {{ index $params 2 }}
+      optional: {{ eq (index $params 3) "true" }}
+  {{ else if eq (first $params) "scr" }}
+    secretKeyRef:
+      key: {{ index $params 1 }}
+      name: {{ index $params 2 }}
+      optional: {{ eq (index $params 3) "true" }}
+  {{ else if eq (first $params) "fr" }}
+    fieldRef:
+      fieldPath: {{ index $params 1 }}
+      apiVersion: {{ index $params 2 }}
+  {{ else }}
+    resourceFieldRef:
+      resource: {{ index $params 1 }}
+      containerName: {{ index $params 2 }}
+      divisor: {{ index $params 3 }}
+  {{ end }}
+{{- end }}
+{{- end }}
+{{- end -}}
+
+{{/* Container envFrom section */}}
+{{- define "poly.v3.container.envFrom" }}
+{{ $envFrom := dict }}
+{{- $app := $.currentApp -}}
+{{- range $val := $app.envFrom }}
+{{ if kindIs "string" $val }}
+{{ $params := concat (without (mustRegexSplit ":" $val -1) "\"\"" "''") (list "") }}
+- {{ ternary "configMapRef" "secretRef" (eq (first $params) "cfm") }}:
+{{- $name := index $params 1 }}
+    name: {{ ternary (printf "%s%s" $.Release.Name $name) $name (hasPrefix "-" $name) }}
+    optional: {{ index $params 2 }}
+{{- with (index $params 3) }}
+  prefix: {{ . }}
+{{- end -}}
+{{ else }}
+{{ if hasKey $val "configMapRef" }}
+{{ $name := $val.configMapRef.name }}
+- configMapRef:
+    name: {{ ternary (printf "%s%s" $.Release.Name $name) $name (hasPrefix "-" $name) }}
+    optional: {{ $val.configMapRef.optional }}
+{{- else -}}
+{{ $name := $val.secretRef.name }}
+- secretRef:
+    name: {{ ternary (printf "%s%s" $.Release.Name $name) $name (hasPrefix "-" $name) }}
+    optional: {{ $val.secretRef.optional }}
+{{- end }}
+{{- with $val.prefix }}
+  prefix: {{ . }}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
