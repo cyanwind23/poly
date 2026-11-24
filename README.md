@@ -21,12 +21,17 @@
 - **Kế thừa & Ghi đè cấu hình (Inheritance & Override)**: Định nghĩa các cấu hình chung tại block `default` và ghi đè riêng biệt cho từng ứng dụng.
 - **Cú pháp rút gọn thông minh (Smart Shortcuts)**:
   - **Environment Variables**: Tham chiếu ConfigMap/Secret/Metadata chỉ với 1 dòng chuỗi.
-  - **Volume & Volume Mounts**: Map PV/PVC với cú pháp chuỗi phân tách bằng dấu hai chấm `:`.
-  - **Probes**: Định nghĩa health check (Liveness, Readiness, Startup) nhanh gọn.
-- **Tích hợp Cloud-Native mạnh mẽ**:
+  - **Volume & Quick Mount**: Map PV/PVC, ConfigMap và Secret nhanh gọn chỉ với `mountPath` hoặc chuỗi phân tách bằng dấu hai chấm `:`.
+  - **Probes**: Bật/tắt toàn cục hoặc từng probe linh hoạt, hỗ trợ shorthand `quickConfigs.healthcheckPath`.
+- **Smart Workload Defaults**: Hỗ trợ đầy đủ `Deployment`, `StatefulSet`, `DaemonSet`, `Job`, `CronJob` với cơ chế tự động điều chỉnh `restartPolicy` và các resource phụ trợ cho Job/CronJob.
+- **Tích hợp Cloud-Native & GitOps mạnh mẽ**:
+  - **ArgoCD Image Updater**: Tách bạch độ ưu tiên `image.tag` > `quickConfigs.registry` giúp ArgoCD Image Updater cập nhật tag dễ dàng.
+  - **Kubernetes Gateway API**: Hỗ trợ gốc `HTTPRoute` và `GRPCRoute` (`gateway.networking.k8s.io/v1`).
+  - **Cilium**: Hỗ trợ `CiliumNetworkPolicy` và `CiliumEnvoyConfig` (`cilium.io/v2`).
   - **Argo Rollouts**: Hỗ trợ chiến lược Blue-Green kèm Service & Ingress Preview.
   - **HashiCorp Vault**: Tích hợp Vault Agent Injector tự động.
   - **Prometheus**: Hỗ trợ tạo nhanh `ServiceMonitor` để thu thập metrics.
+- **Schema Validation**: Tích hợp `values.schema.json` giúp phát hiện sớm lỗi sai kiểu dữ liệu hoặc giá trị không hợp lệ ngay từ bước `helm lint` / `helm template`.
 
 ---
 
@@ -71,8 +76,11 @@ appVersion: "1.0.0"
 dependencies:
   - name: poly
     repository: https://github.com/cyanwind23/poly
-    version: "3.0.5" # Sử dụng version phù hợp
+    version: "3.1.0" # Sử dụng version phù hợp
 ```
+
+> [!NOTE]
+> **Điểm nổi bật ở `v3.1.0`**: Bổ sung độ ưu tiên tag cho ArgoCD Image Updater (`image.tag` > `quickConfigs.registry`), smart defaults cho `Job`/`CronJob`, quick volume mount cho `configMaps[]` & `secrets[]`, cơ chế bật/tắt `probes` linh hoạt, hỗ trợ Kubernetes Gateway API (`HTTPRoute`, `GRPCRoute`) & Cilium (`CiliumNetworkPolicy`, `CiliumEnvoyConfig`), cùng kiểm tra hợp lệ bằng `values.schema.json`.
 
 Sau đó chạy lệnh để cập nhật dependency:
 
@@ -160,7 +168,8 @@ poly:
       - scr:global-secrets:false  # Tên thực tế giữ nguyên: global-secrets
 ```
 
-### 3. Volume & Volume Mounts rút gọn
+### 3. Volume, Volume Mounts & Quick Mount (ConfigMap / Secret)
+#### a. Cú pháp chuỗi rút gọn cho `volumeMounts`
 Thay vì viết block YAML phức tạp của Kubernetes, bạn có thể map volume nhanh bằng chuỗi phân tách bởi dấu `:`:
 - **Cú pháp**: `volumeName:mountPath:readOnly:subPath:mountPropagation`
 
@@ -177,8 +186,63 @@ poly:
       - config-volume:/etc/config:true:config.json # Mount config.json ở chế độ readOnly
 ```
 
-### 4. Probes (Healthcheck)
-Cung cấp tham số `params` định dạng chuỗi `initialDelay:period:timeout:failure:success` để cấu hình nhanh các probe.
+#### b. Quick Volume Mount cho `configMaps[]` và `secrets[]`
+Tương tự `pvcs[].mountPath`, từ `v3.1.0` bạn có thể khai báo `mountPath` trực tiếp ngay trong `configMaps[]` hoặc `secrets[]` để Poly tự động sinh `volumes` và `volumeMounts` tương ứng (bỏ qua `mountPath` nếu chỉ muốn tạo resource hoặc dùng cho `envFrom`).
+
+- **Tạo mới hoặc mount resource có sẵn**:
+  - `create: true`: Poly tự tạo resource `ConfigMap` / `Secret` với tên `<releaseName>-<name>` (hoặc `fullName` nếu được chỉ định). Với Secret hỗ trợ thêm `type` (mặc định `Opaque`), `annotations`, `data` (base64) và `stringData` (plain-text). Với ConfigMap hỗ trợ `isFileType: true/false` và `data`.
+  - `create: false`: Chỉ mount ConfigMap/Secret đã tồn tại trong cluster.
+- **Quy tắc đặt tên với tiền tố `-` (`-prefix` naming)**: Khi `create: false`, nếu `name` bắt đầu bằng `-` (ví dụ: `-shared-cm`), Poly tự động ghép `<releaseName>-shared-cm`; nếu không có `-` (ví dụ: `external-cm`), tên được giữ nguyên. Nếu có `fullName`, Poly luôn ưu tiên `fullName`.
+- **Các tùy chọn mount hỗ trợ**: `mountPath`, `subPath`, `readOnly` (mặc định `true` cho quick-mount ConfigMap/Secret), `volumeName` (tùy chỉnh tên volume nếu cần, mặc định `cm-<name>` / `secret-<name>`), `defaultMode`, `optional`, và `items` (`key`, `path`).
+
+*Ví dụ:*
+```yaml
+poly:
+  myApp:
+    enabled: true
+    configMaps:
+      # Tạo mới ConfigMap dạng file và mount thẳng vào thư mục
+      - name: app-config
+        create: true
+        isFileType: true
+        mountPath: /etc/app/config
+        data:
+          config.yaml: |
+            port: 8080
+            env: prod
+      # Mount ConfigMap có sẵn dùng -prefix, subPath, defaultMode, optional và items
+      - name: -shared-cm
+        create: false
+        mountPath: /etc/app/settings.json
+        subPath: settings.json
+        readOnly: true
+        defaultMode: 420
+        optional: true
+        items:
+          - key: raw-settings
+            path: settings.json
+    secrets:
+      # Tạo mới Secret với stringData và mount một key qua subPath
+      - name: db-creds
+        create: true
+        type: Opaque
+        mountPath: /etc/db/password
+        subPath: password
+        defaultMode: 256
+        items:
+          - key: db-pass
+            path: password
+        stringData:
+          db-pass: "super-secret-password"
+```
+
+### 4. Probes (Healthcheck) & Cơ chế Bật/Tắt Linh Hoạt
+Cung cấp tham số `params` định dạng chuỗi `initialDelay:period:timeout:failure:success` để cấu hình nhanh các probe, kết hợp với cơ chế bật/tắt thông minh:
+
+- **Global toggle (`probes.enabled`)**: Đặt `probes.enabled: false` để tắt toàn bộ probes kế thừa từ `default` (mặc định `true` cho `Deployment`/`StatefulSet`/`DaemonSet`, và `false` cho `Job`/`CronJob`).
+- **Per-probe toggle (`enabled: true/false`)**: Tắt hoặc bật riêng từng probe (`livenessProbe`, `readinessProbe`, `startupProbe`), ví dụ đặt `readinessProbe.enabled: false` để chỉ giữ lại `livenessProbe`. Trường `enabled` chỉ điều khiển render và không bị xuất ra manifest Kubernetes.
+- **Shorthand với `quickConfigs.healthcheckPath`**: Nếu đặt `quickConfigs.healthcheckPath` (ví dụ `"/healthz"`) và bật `probes.livenessProbe.enabled: true` (không cần khai báo `httpGet`), Poly sẽ tự tạo `httpGet` trỏ tới `path: /healthz`, `port: http`, `scheme: HTTP`.
+- **`probesOverride`**: Ghi đè trực tiếp toàn bộ block probes với độ ưu tiên cao nhất.
 
 *Ví dụ:*
 ```yaml
@@ -188,13 +252,157 @@ poly:
     quickConfigs:
       healthcheckPath: "/healthz"
     probes:
+      enabled: true
       livenessProbe:
-        httpGet:
-          request: /:http
-        params: "10:10:5:3:1" # initialDelay=10s, period=10s, timeout=5s, failure=3, success=1
+        enabled: true          # Tự sinh httpGet với path: /healthz, port: http
+        params: "10:10:5:3:1"  # initialDelay=10s, period=10s, timeout=5s, failure=3, success=1
+      readinessProbe:
+        enabled: false         # Tắt riêng readinessProbe kế thừa từ default
 ```
 
-### 5. Tích hợp HashiCorp Vault
+### 5. ArgoCD Image Updater & Độ Ưu Tiên Image Tag
+Poly tách riêng độ ưu tiên giữa repository và tag để tương thích hoàn hảo với **ArgoCD Image Updater** (vốn thường cập nhật `image.tag` hoặc `image.repository` mà không sửa `quickConfigs.registry`):
+
+- **Độ ưu tiên Repository**: `image.repository` > phần repo của `quickConfigs.registry`
+- **Độ ưu tiên Tag**: `image.tag` > phần tag fallback của `quickConfigs.registry`
+
+Nếu `quickConfigs.registry` có dạng `10.0.0.1:5000/my-app:v1.0.0` (kể cả khi registry có cổng `:5000`), Poly vẫn bóc tách đúng repo và tag fallback, đồng thời ưu tiên `image.tag` nếu được khai báo.
+
+*Ví dụ:*
+```yaml
+poly:
+  myApp:
+    enabled: true
+    quickConfigs:
+      registry: "10.0.0.1:5000/my-app:v1.0.0" # Fallback repo & tag
+    image:
+      tag: "v2.0.0" # Ghi đè tag -> Kết quả image: "10.0.0.1:5000/my-app:v2.0.0"
+```
+
+### 6. Job & CronJob (Smart Defaults)
+Khi khai báo `deployType: Job` hoặc `deployType: CronJob`, Poly tự động áp dụng các thiết lập phù hợp để tránh lỗi cấu hình phổ biến trên Kubernetes:
+
+- **Tự động `restartPolicy: OnFailure`**: Tự đặt `podLifecycle.restartPolicy: OnFailure` (và tự chuyển từ `Always` sang `OnFailure` nếu kế thừa từ `default`; vẫn giữ nguyên nếu bạn cấu hình rõ `Never`).
+- **Tắt `probes` & `lifecycle` theo mặc định**: Không render `probes` và `lifecycle` (như `default.lifecycle.preStop`) trừ khi app bật tường minh `probes.enabled: true` / `lifecycle.enabled: true` hoặc dùng `*Override`.
+- **Tạo `Service` & `Ingress` có điều kiện**: Không tạo `Service` hay `Ingress` dù `default.service.enabled: true`, trừ khi app tự khai báo tường minh `service.enabled: true` hoặc `ingress.enabled: true`.
+- **Cấu hình spec qua `workloadCommonConfigs`**: Dùng `workloadCommonConfigs.cronjob` (`schedule`, `concurrencyPolicy`, `successfulJobsHistoryLimit`, `failedJobsHistoryLimit`, `timezone`, `suspend`, `startingDeadlineSeconds`) và `workloadCommonConfigs.job` (`parallelism`, `completions`, `completionMode`, `backoffLimit`, `suspend`, `activeDeadlineSeconds`, `ttlSecondsAfterFinished`).
+
+*Ví dụ:*
+```yaml
+poly:
+  dbMigrator:
+    enabled: true
+    deployType: Job
+    image:
+      repository: myregistry.com/db-migrator
+      tag: "v1.0.0"
+    command: ["/bin/sh", "-c", "migrate.sh"]
+    workloadCommonConfigs:
+      job:
+        backoffLimit: 3
+        ttlSecondsAfterFinished: 600
+
+  dailyBackup:
+    enabled: true
+    deployType: CronJob
+    image:
+      repository: myregistry.com/db-backup
+      tag: "v2.1.0"
+    workloadCommonConfigs:
+      cronjob:
+        schedule: "0 2 * * *"
+        concurrencyPolicy: "Forbid"
+        timezone: "Asia/Ho_Chi_Minh"
+```
+
+### 7. Kubernetes Gateway API (`HTTPRoute` & `GRPCRoute`)
+Hỗ trợ tạo trực tiếp các tài nguyên Gateway API (`gateway.networking.k8s.io/v1`) dưới block `gatewayApi`:
+
+- **`gatewayApi.httpRoute`** (`HTTPRoute`) và **`gatewayApi.grpcRoute`** (`GRPCRoute`): Hỗ trợ `enabled`, `name` (hỗ trợ tiền tố `-`), `annotations` (hỗ trợ Helm `tpl`), `parentRefs`, `hostnames`, `rules` và `extraRoutes` (khi cần nhiều route cho cùng một app).
+- **Suy luận thông minh**:
+  - Nếu bỏ trống `hostnames` và có `quickConfigs.domain`, Poly tự động dùng `[quickConfigs.domain]`.
+  - Nếu trong `rules` chưa chỉ định `backendRefs`, Poly tự gắn `backendRefs` trỏ về Service của app (dùng port đầu tiên trong `service.ports` hoặc `quickConfigs.port`).
+  - Nếu bỏ trống `rules` hoàn toàn, Poly tự tạo rule mặc định (`PathPrefix /` cho `HTTPRoute`).
+
+*Ví dụ:*
+```yaml
+poly:
+  apiService:
+    enabled: true
+    quickConfigs:
+      domain: "api.example.com"
+    ports:
+      - "8080:http:TCP"
+    service:
+      ports:
+        - "8080:8080:TCP:http"
+    gatewayApi:
+      httpRoute:
+        enabled: true
+        name: -http
+        parentRefs:
+          - name: main-gateway
+            namespace: infra
+            sectionName: https
+        rules:
+          - matches:
+              - path:
+                  type: PathPrefix
+                  value: /api/v1
+        extraRoutes:
+          - enabled: true
+            name: internal-http
+            parentRefs:
+              - name: internal-gateway
+                namespace: infra
+            hostnames:
+              - internal.example.com
+```
+
+### 8. Cilium (`CiliumNetworkPolicy` & `CiliumEnvoyConfig`)
+Hỗ trợ khai báo chính sách mạng và cấu hình Envoy của Cilium (`cilium.io/v2`) dưới block `cilium`:
+
+- **`cilium.networkPolicy`** (`CiliumNetworkPolicy`): Hỗ trợ `enabled`, `name` (hỗ trợ tiền tố `-`), `annotations`, `description`, `endpointSelector` (nếu bỏ trống sẽ tự dùng `selectorLabels` của app), `ingress`, `ingressDeny`, `egress`, `egressDeny`, hoặc `specs` (khi cần danh sách nhiều rule spec).
+- **`cilium.envoyConfig`** (`CiliumEnvoyConfig`): Hỗ trợ `enabled`, `name` (hỗ trợ tiền tố `-`), `annotations`, `services`, `backendServices` và `resources`.
+
+*Ví dụ:*
+```yaml
+poly:
+  apiService:
+    enabled: true
+    cilium:
+      networkPolicy:
+        enabled: true
+        description: "Allow ingress from web and egress to kube-dns"
+        ingress:
+          - fromEndpoints:
+              - matchLabels:
+                  app: web
+            toPorts:
+              - ports:
+                  - port: "8080"
+                    protocol: TCP
+        egress:
+          - toEndpoints:
+              - matchLabels:
+                  k8s:io.kubernetes.pod.namespace: kube-system
+                  k8s-app: kube-dns
+            toPorts:
+              - ports:
+                  - port: "53"
+                    protocol: UDP
+      envoyConfig:
+        enabled: true
+        name: -envoy
+        services:
+          - name: my-release-api-service
+            listener: envoy-listener
+        resources:
+          - "@type": type.googleapis.com/envoy.config.listener.v3.Listener
+            name: envoy-listener
+```
+
+### 9. Tích hợp HashiCorp Vault
 Tự động cấu hình annotations cho Vault Agent Injector:
 
 ```yaml
@@ -222,7 +430,7 @@ poly:
         runtimeArgs: [". /vault/secrets/config.env && exec my-app-binary"]
 ```
 
-### 6. Argo Rollouts (Blue-Green Deployments)
+### 10. Argo Rollouts (Blue-Green Deployments)
 Chỉ cần bật `rollout.enabled: true`, Poly sẽ tự sinh ra resource `Rollout` thay thế/đi kèm `Deployment` tương ứng:
 
 ```yaml
@@ -251,6 +459,17 @@ poly:
 
 ---
 
+## ✅ Schema Validation & Kiểm Thử
+
+- **Helm `values.schema.json` Validation**: Chart `charts/poly` đi kèm file `charts/poly/values.schema.json` (JSON Schema Draft 7) để Helm tự động xác thực cấu trúc `values.yaml`, kiểu dữ liệu (`replicas`, `port`, ...) và các giá trị enum hợp lệ (`deployType`, `image.pullPolicy`, `podLifecycle.restartPolicy`, `service.type`, ...) ngay khi chạy `helm lint`, `helm template`, `helm install` hoặc `helm upgrade`.
+- **Regression & Negative Schema Test Suite**: Xem hướng dẫn chi tiết tại [tests/README.md](tests/README.md) và chạy toàn bộ bộ test tự động bằng lệnh:
+
+```console
+./tests/run-tests.sh
+```
+
+---
+
 ## 🔍 Kiểm Tra Cấu Hình Mặc Định
 
 Bạn có thể lấy toàn bộ file cấu hình default và định dạng đầy đủ của Poly bằng lệnh:
@@ -260,5 +479,5 @@ Bạn có thể lấy toàn bộ file cấu hình default và định dạng đ�
 helm show values https://github.com/cyanwind23/poly > poly-values.yaml
 
 # Hoặc lấy trực tiếp từ file package local (.tgz)
-helm show values charts/poly-3.0.5.tgz > poly-values.yaml
+helm show values charts/poly-3.1.0.tgz > poly-values.yaml
 ```

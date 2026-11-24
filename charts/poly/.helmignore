@@ -29,3 +29,13 @@ test/
 CHANGELOG/
 scripts/
 release/
+
+# Local & test artifacts
+*.local.yaml
+*.local.yml
+*.local.md
+*.tgz
+.tracking/
+TRACKING*.md
+tests/cases/*/actual.yaml
+actual.yaml

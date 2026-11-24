@@ -15,6 +15,17 @@ Dự án áp dụng mô hình **Git Flow với Release Branch**:
   - Dùng để tích hợp tất cả các tính năng, refactor và bugfix trước khi chốt release vào `main`.
   - Các nhánh `release/vX.Y.Z` được giữ lại trên repository để làm mốc tham chiếu lịch sử phiên bản.
 
+### Chiến lược phân tách & tích hợp nhánh trong Milestone:
+- **Mặc định tách nhánh độc lập từ `release/vX.Y.Z`**:
+  - Mỗi task/issue phải tách trực tiếp từ `release/vX.Y.Z`, giữ phạm vi gọn, test pass xong là mở PR và **Squash and Merge** sớm (`1 feature = 1 commit` sạch sẽ, dễ hoãn hoặc revert nếu cần).
+- **Thứ tự triển khai tối ưu trong một Milestone**:
+  1. **Refactor kiến trúc lớn** (như tách partial templates) thực hiện trước hoặc cô lập để tránh xung đột với nhánh feature.
+  2. **Các Feature độc lập** tách song song từ `release/vX.Y.Z` và merge sớm ngay khi đạt chuẩn.
+  3. **Nhóm hoàn thiện & chốt release** (`values.schema.json`, `README.md`, nâng `version` trong `Chart.yaml` + chạy `./tests/run-tests.sh --update`) thực hiện sau khi các feature đã merge về `release/vX.Y.Z`.
+- **Ngoại lệ Stacked PRs (PR chuỗi)**:
+  - Chỉ xếp chuỗi (tối đa 2–3 tầng) khi PR sau **bắt buộc** phụ thuộc vào helper/API của PR trước đang chờ review.
+  - Khi merge PR chuỗi, ưu tiên **Rebase and Merge** (hoặc **Merge commit**) để giữ nguyên base commit; nếu dùng *Squash and Merge* ở nhánh dưới, cần chạy `git rebase --onto` cho các nhánh xếp trên để tránh lệch diff/conflict.
+
 ---
 
 ## 2. Naming Conventions
@@ -62,12 +73,15 @@ Trước khi tạo Pull Request, bắt buộc chạy kiểm tra cục bộ:
 # 1. Kiểm tra cú pháp Chart
 helm lint charts/poly
 
-# 2. Render thử nghiệm templates
+# 2. Chạy toàn bộ bộ test đối chiếu & schema validation
+./tests/run-tests.sh
+
+# 3. Render thử nghiệm với cấu hình mặc định (nếu cần kiểm tra nhanh)
 helm template test-release charts/poly -f charts/poly/values.yaml
 ```
 
 ### Workflow:
-1. Push nhánh làm việc lên GitHub.
+1. Push nhánh làm việc lên GitHub (`origin`).
 2. Tạo Pull Request trỏ vào target branch `release/vX.Y.Z`.
-3. Đảm bảo tất cả các test case `helm template` passed.
-4. Merge PR bằng phương thức **Squash and Merge** hoặc **Rebase and Merge**.
+3. Đảm bảo `helm lint` và tất cả test case trong `./tests/run-tests.sh` đều passed.
+4. Merge PR bằng **Squash and Merge** (với nhánh độc lập) hoặc **Rebase and Merge** (với chuỗi phụ thuộc).
