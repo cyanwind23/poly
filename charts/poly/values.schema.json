@@ -311,6 +311,7 @@
             "properties": {
               "name": { "type": "string" },
               "create": { "type": "boolean" },
+              "exists": { "type": "boolean" },
               "fullName": { "type": "string" },
               "isFileType": { "type": "boolean" },
               "mountPath": { "type": "string" },
@@ -324,17 +325,30 @@
             }
           }
         },
+        "externalSecret": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "apiVersion": { "type": "string" },
+            "refreshInterval": { "type": "string" },
+            "secretStoreRef": { "type": "object" }
+          }
+        },
         "secrets": {
           "type": "array",
           "items": {
             "type": "object",
             "additionalProperties": true,
+            "not": {
+              "anyOf": [
+                { "required": ["data"] },
+                { "required": ["stringData"] }
+              ]
+            },
             "properties": {
               "name": { "type": "string" },
-              "create": { "type": "boolean" },
+              "exists": { "type": "boolean" },
               "fullName": { "type": "string" },
-              "type": { "type": "string" },
-              "annotations": { "type": "object" },
               "mountPath": { "type": "string" },
               "subPath": { "type": "string" },
               "readOnly": { "type": "boolean" },
@@ -342,8 +356,21 @@
               "defaultMode": { "type": "integer", "minimum": 0 },
               "optional": { "type": "boolean" },
               "items": { "type": "array", "items": { "type": "object" } },
-              "data": { "type": "object" },
-              "stringData": { "type": "object" }
+              "externalSecret": {
+                "type": "object",
+                "additionalProperties": true,
+                "properties": {
+                  "enabled": { "type": "boolean" },
+                  "apiVersion": { "type": "string" },
+                  "name": { "type": "string" },
+                  "refreshInterval": { "type": "string" },
+                  "annotations": { "type": "object" },
+                  "secretStoreRef": { "type": "object" },
+                  "target": { "type": "object" },
+                  "data": { "type": "array", "items": { "type": "object" } },
+                  "dataFrom": { "type": "array", "items": { "type": "object" } }
+                }
+              }
             }
           }
         },

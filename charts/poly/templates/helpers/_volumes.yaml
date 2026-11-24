@@ -3,12 +3,17 @@
 {{- end -}}
 
 {{- define "poly.v3.quickMount.resourceName" -}}
-{{- if .item.fullName -}}
+{{- $es := .item.externalSecret | default dict -}}
+{{- $isManagedES := and $es.enabled (not .item.exists) -}}
+{{- $isManagedCM := and .item.create (not .item.exists) -}}
+{{- if and $isManagedES $es.target $es.target.name -}}
+{{- $es.target.name -}}
+{{- else if .item.fullName -}}
 {{- .item.fullName -}}
-{{- else if .item.create -}}
-{{- printf "%s-%s" .releaseName .item.name -}}
+{{- else if or $isManagedCM $isManagedES -}}
+{{- printf "%s-%s" .Release.Name .item.name -}}
 {{- else -}}
-{{- include "poly.v3.prefixName" (dict "Release" (dict "Name" .releaseName) "prefixName" .item.name) -}}
+{{- include "poly.v3.prefixName" (dict "Release" .Release "prefixName" .item.name) -}}
 {{- end -}}
 {{- end -}}
 
@@ -27,7 +32,7 @@
 {{- range $item := $group.items }}
 {{- if $item.mountPath }}
 {{- $volName := include "poly.v3.quickMount.volumeName" (dict "item" $item "prefix" $group.prefix) }}
-{{- $resName := include "poly.v3.quickMount.resourceName" (dict "item" $item "releaseName" $.Release.Name) }}
+{{- $resName := include "poly.v3.quickMount.resourceName" (dict "item" $item "Release" $.Release) }}
 - name: {{ $volName }}
   {{ $group.kind }}:
     {{ $group.nameKey }}: {{ $resName }}

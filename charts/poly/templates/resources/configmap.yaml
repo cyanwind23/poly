@@ -1,7 +1,7 @@
 {{- define "poly.v3.configmap" -}}
 {{- $app := $.currentApp -}}
 {{- range $cm := $app.configMaps }}
-{{- if $cm.create }}
+{{- if and $cm.create (not $cm.exists) }}
 ---
 apiVersion: v1
 kind: ConfigMap

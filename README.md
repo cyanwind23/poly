@@ -29,6 +29,7 @@
   - **Kubernetes Gateway API**: Hỗ trợ gốc `HTTPRoute` và `GRPCRoute` (`gateway.networking.k8s.io/v1`).
   - **Cilium**: Hỗ trợ `CiliumNetworkPolicy` và `CiliumEnvoyConfig` (`cilium.io/v2`).
   - **Argo Rollouts**: Hỗ trợ chiến lược Blue-Green kèm Service & Ingress Preview.
+  - **External Secrets Operator**: Quản lý Secret qua `ExternalSecret` thay cho việc lưu trữ Secret thô trong Git.
   - **HashiCorp Vault**: Tích hợp Vault Agent Injector tự động.
   - **Prometheus**: Hỗ trợ tạo nhanh `ServiceMonitor` để thu thập metrics.
 - **Schema Validation**: Tích hợp `values.schema.json` giúp phát hiện sớm lỗi sai kiểu dữ liệu hoặc giá trị không hợp lệ ngay từ bước `helm lint` / `helm template`.
@@ -186,18 +187,32 @@ poly:
       - config-volume:/etc/config:true:config.json # Mount config.json ở chế độ readOnly
 ```
 
-#### b. Quick Volume Mount cho `configMaps[]` và `secrets[]`
-Tương tự `pvcs[].mountPath`, từ `v3.1.0` bạn có thể khai báo `mountPath` trực tiếp ngay trong `configMaps[]` hoặc `secrets[]` để Poly tự động sinh `volumes` và `volumeMounts` tương ứng (bỏ qua `mountPath` nếu chỉ muốn tạo resource hoặc dùng cho `envFrom`).
+#### b. Quick Volume Mount cho `configMaps[]`, `secrets[]` & ExternalSecret
+Tương tự `pvcs[].mountPath`, bạn có thể khai báo `mountPath` trực tiếp ngay trong `configMaps[]` hoặc `secrets[]` để Poly tự động sinh `volumes` và `volumeMounts` tương ứng (bỏ qua `mountPath` nếu chỉ muốn tạo resource hoặc dùng cho `envFrom`).
 
-- **Tạo mới hoặc mount resource có sẵn**:
-  - `create: true`: Poly tự tạo resource `ConfigMap` / `Secret` với tên `<releaseName>-<name>` (hoặc `fullName` nếu được chỉ định). Với Secret hỗ trợ thêm `type` (mặc định `Opaque`), `annotations`, `data` (base64) và `stringData` (plain-text). Với ConfigMap hỗ trợ `isFileType: true/false` và `data`.
-  - `create: false`: Chỉ mount ConfigMap/Secret đã tồn tại trong cluster.
-- **Quy tắc đặt tên với tiền tố `-` (`-prefix` naming)**: Khi `create: false`, nếu `name` bắt đầu bằng `-` (ví dụ: `-shared-cm`), Poly tự động ghép `<releaseName>-shared-cm`; nếu không có `-` (ví dụ: `external-cm`), tên được giữ nguyên. Nếu có `fullName`, Poly luôn ưu tiên `fullName`.
+> [!IMPORTANT]
+> **Không khai báo trực tiếp dữ liệu Secret (`data` / `stringData`) trong Git.** Để đảm bảo bảo mật GitOps, `values.schema.json` chặn hoàn toàn `secrets[].data` và `secrets[].stringData`. Secret phải được đồng bộ qua **ExternalSecret** (External Secrets Operator) hoặc mount từ **Secret có sẵn** trên cluster (`exists: true`).
+
+- **ConfigMap (`configMaps[]`)**:
+  - `create: true` (và `exists` không bật): Poly tạo mới `ConfigMap` tên `<releaseName>-<name>` (hoặc `fullName`), hỗ trợ `isFileType: true/false` và `data`.
+  - `exists: true` (hoặc `create: false`): Mount `ConfigMap` có sẵn trên cluster.
+- **Secret (`secrets[]`)**:
+  - `exists: true` (hoặc không bật `externalSecret.enabled`): Mount `Secret` đã tồn tại trên cluster.
+  - `externalSecret.enabled: true` (khi `exists` không bật): Poly sinh manifest `ExternalSecret` (`external-secrets.io/v1` mặc định, kế thừa `default.externalSecret`) để đồng bộ dữ liệu từ Secret Store về K8s Secret đích rồi mount vào container (nếu có `mountPath`).
+- **Quy tắc đặt tên với tiền tố `-` (`-prefix` naming)**: Khi mount resource có sẵn (`exists: true` / `create: false`), nếu `name` bắt đầu bằng `-` (ví dụ: `-shared-cm`), Poly tự động ghép `<releaseName>-shared-cm`; nếu không có `-` (ví dụ: `external-cm`), tên được giữ nguyên. Nếu có `fullName`, Poly luôn ưu tiên `fullName`.
 - **Các tùy chọn mount hỗ trợ**: `mountPath`, `subPath`, `readOnly` (mặc định `true` cho quick-mount ConfigMap/Secret), `volumeName` (tùy chỉnh tên volume nếu cần, mặc định `cm-<name>` / `secret-<name>`), `defaultMode`, `optional`, và `items` (`key`, `path`).
 
 *Ví dụ:*
 ```yaml
 poly:
+  default:
+    externalSecret:
+      apiVersion: external-secrets.io/v1
+      refreshInterval: 1h
+      secretStoreRef:
+        name: vault-backend
+        kind: ClusterSecretStore
+
   myApp:
     enabled: true
     configMaps:
@@ -212,7 +227,7 @@ poly:
             env: prod
       # Mount ConfigMap có sẵn dùng -prefix, subPath, defaultMode, optional và items
       - name: -shared-cm
-        create: false
+        exists: true
         mountPath: /etc/app/settings.json
         subPath: settings.json
         readOnly: true
@@ -222,18 +237,27 @@ poly:
           - key: raw-settings
             path: settings.json
     secrets:
-      # Tạo mới Secret với stringData và mount một key qua subPath
+      # Đồng bộ Secret từ External Secrets Operator và mount một key qua subPath
       - name: db-creds
-        create: true
-        type: Opaque
         mountPath: /etc/db/password
         subPath: password
         defaultMode: 256
         items:
           - key: db-pass
             path: password
-        stringData:
-          db-pass: "super-secret-password"
+        externalSecret:
+          enabled: true
+          target:
+            creationPolicy: Owner
+          data:
+            - secretKey: db-pass
+              remoteRef:
+                key: secret/data/db
+                property: password
+      # Mount Secret có sẵn trên cluster
+      - name: tls-secret
+        exists: true
+        mountPath: /etc/tls
 ```
 
 ### 4. Probes (Healthcheck) & Cơ chế Bật/Tắt Linh Hoạt
@@ -461,7 +485,7 @@ poly:
 
 ## ✅ Schema Validation & Kiểm Thử
 
-- **Helm `values.schema.json` Validation**: Chart `charts/poly` đi kèm file `charts/poly/values.schema.json` (JSON Schema Draft 7) để Helm tự động xác thực cấu trúc `values.yaml`, kiểu dữ liệu (`replicas`, `port`, ...) và các giá trị enum hợp lệ (`deployType`, `image.pullPolicy`, `podLifecycle.restartPolicy`, `service.type`, ...) ngay khi chạy `helm lint`, `helm template`, `helm install` hoặc `helm upgrade`.
+- **Helm `values.schema.json` Validation**: Chart `charts/poly` đi kèm file `charts/poly/values.schema.json` (JSON Schema Draft 7) để Helm tự động xác thực cấu trúc `values.yaml`, kiểu dữ liệu (`replicas`, `port`, ...), các giá trị enum hợp lệ (`deployType`, `image.pullPolicy`, `podLifecycle.restartPolicy`, `service.type`, ...) và **chặn khai báo trực tiếp `secrets[].data` / `secrets[].stringData` trong Git** ngay khi chạy `helm lint`, `helm template`, `helm install` hoặc `helm upgrade`.
 - **Regression & Negative Schema Test Suite**: Xem hướng dẫn chi tiết tại [tests/README.md](tests/README.md) và chạy toàn bộ bộ test tự động bằng lệnh:
 
 ```console

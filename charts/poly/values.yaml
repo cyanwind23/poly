@@ -392,6 +392,8 @@ default:
   configMaps:
   - name: main
     create: false
+    # Set exists: true to mount an existing ConfigMap (skips creation even if create: true)
+    # exists: false
     # Provide configmap fullname, the fixed name with highest priority, must be unique, optional
     fullName: ""
     # Is this configmap type file-config? If true, use second `data` format below
@@ -420,14 +422,21 @@ default:
     #     hello-world-2
     #     ...
 
-  # Secret config
+  # Default ExternalSecret config (External Secrets Operator)
+  # More info: https://external-secrets.io/
+  externalSecret:
+    apiVersion: external-secrets.io/v1
+    refreshInterval: 1h
+    secretStoreRef: {}
+      # name: vault-backend
+      # kind: ClusterSecretStore
+
+  # Secret config (mount existing Secrets or sync via ExternalSecret; raw data/stringData in Git is forbidden)
   secrets: []
-    # - name: main
-    #   create: false
-    #   # Provide secret fullname, the fixed name with highest priority, must be unique, optional
+    # - name: app-secret
+    #   # Set exists: true to mount an existing Secret (use "-name" for <release>-name or fullName for exact name)
+    #   exists: false
     #   fullName: ""
-    #   type: Opaque
-    #   annotations: {}
     #
     #   # Quick volume mount options (omit mountPath to skip mounting)
     #   mountPath: /etc/secrets
@@ -440,9 +449,25 @@ default:
     #     - key: token
     #       path: token
     #
-    #   # Provide base64-encoded data or plain-text stringData when create: true
-    #   data: {}
-    #   stringData: {}
+    #   # Optional: manage Secret lifecycle via External Secrets Operator
+    #   externalSecret:
+    #     enabled: false
+    #     apiVersion: external-secrets.io/v1
+    #     name: "" # defaults to fullName or <release>-<name>; supports "-suffix" prefix
+    #     refreshInterval: 1h
+    #     annotations: {}
+    #     secretStoreRef:
+    #       name: vault-backend
+    #       kind: ClusterSecretStore
+    #     target:
+    #       name: "" # synced K8s Secret name; defaults to fullName or <release>-<name>
+    #       creationPolicy: Owner
+    #     data:
+    #       - secretKey: token
+    #         remoteRef:
+    #           key: secret/data/app
+    #           property: token
+    #     dataFrom: []
 
   # Enable vault for your app
   #

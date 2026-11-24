@@ -5,6 +5,12 @@ default:
   image:
     repository: myregistry.com/demo
     tag: "v1.0.0"
+  externalSecret:
+    apiVersion: external-secrets.io/v1
+    refreshInterval: 1h
+    secretStoreRef:
+      name: vault-backend
+      kind: ClusterSecretStore
 
 # Scenario 1: Created file-type ConfigMap with mountPath
 appCmCreatedFile:
@@ -19,12 +25,12 @@ appCmCreatedFile:
           port: 8080
           env: prod
 
-# Scenario 2: Existing ConfigMap with mountPath, subPath, items, defaultMode, optional
+# Scenario 2: Existing ConfigMap (exists: true) with mountPath, subPath, items, defaultMode, optional
 appCmExistingOptions:
   enabled: true
   configMaps:
     - name: external-cm
-      create: false
+      exists: true
       mountPath: /etc/app/settings.json
       subPath: settings.json
       defaultMode: 420
@@ -38,34 +44,43 @@ appCmPrefixName:
   enabled: true
   configMaps:
     - name: -shared-cm
-      create: false
+      exists: true
       mountPath: /etc/shared
 
-# Scenario 4: Existing Secret with mountPath, defaultMode, readOnly
+# Scenario 4: Existing Secrets (exists: true) with plain name and -prefix name
 appSecretExisting:
   enabled: true
   secrets:
     - name: tls-secret
-      create: false
+      exists: true
       mountPath: /etc/tls
       defaultMode: 256
       readOnly: true
+    - name: -shared-tls
+      exists: true
+      mountPath: /etc/shared-tls
 
-# Scenario 5: Created Secret with stringData, mountPath, subPath, items
-appSecretCreated:
+# Scenario 5: ExternalSecret (inherits default secretStoreRef) with mountPath, subPath, items
+appExternalSecretMount:
   enabled: true
   secrets:
     - name: db-creds
-      create: true
       mountPath: /etc/db/password
       subPath: password
       items:
         - key: db-pass
           path: password
-      stringData:
-        db-pass: super-secret-password
+      externalSecret:
+        enabled: true
+        target:
+          creationPolicy: Owner
+        data:
+          - secretKey: db-pass
+            remoteRef:
+              key: secret/data/db
+              property: password
 
-# Scenario 6: Combined volumes + volumeMounts + pvcs + configMaps + secrets
+# Scenario 6: Combined volumes + volumeMounts + pvcs + created & existing configMaps + ExternalSecret + existing secrets
 appCombinedMounts:
   enabled: true
   volumes:
@@ -84,15 +99,25 @@ appCombinedMounts:
       mountPath: /etc/combined/cm
       data:
         APP_ENV: staging
+    - name: shared-existing-cm
+      exists: true
+      mountPath: /etc/combined/existing-cm
   secrets:
-    - name: combined-secret
-      create: true
+    - name: combined-es-secret
       mountPath: /etc/combined/secret
       readOnly: false
-      stringData:
-        API_KEY: abc123
+      externalSecret:
+        enabled: true
+        data:
+          - secretKey: API_KEY
+            remoteRef:
+              key: secret/data/combined
+              property: api_key
+    - name: existing-ca-secret
+      exists: true
+      mountPath: /etc/combined/ca
 
-# Scenario 7: ConfigMap & Secret without mountPath (must NOT emit volumes or volumeMounts)
+# Scenario 7: ExternalSecret (dataFrom + custom apiVersion) & ConfigMap without mountPath
 appNoMounts:
   enabled: true
   configMaps:
@@ -101,7 +126,12 @@ appNoMounts:
       data:
         LOG_LEVEL: info
   secrets:
-    - name: env-only-secret
-      create: true
-      stringData:
-        TOKEN: tok-123
+    - name: env-only-es
+      externalSecret:
+        enabled: true
+        apiVersion: external-secrets.io/v1beta1
+        name: -env-only-es
+        refreshInterval: 30m
+        dataFrom:
+          - extract:
+              key: secret/data/env-only

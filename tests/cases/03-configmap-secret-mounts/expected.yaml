@@ -1,51 +1,6 @@
 ---
 # Source: poly/templates/main.yaml
 apiVersion: v1
-kind: Secret
-metadata:
-  name: test-release-combined-secret
-  labels:
-    helm.sh/chart: poly-3.0.5
-    app.kubernetes.io/name: app-combined-mounts
-    app.kubernetes.io/instance: test-release
-    app.kubernetes.io/version: "1.0.0"
-    app.kubernetes.io/managed-by: Helm
-type: Opaque
-stringData:
-  API_KEY: abc123
----
-# Source: poly/templates/main.yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: test-release-env-only-secret
-  labels:
-    helm.sh/chart: poly-3.0.5
-    app.kubernetes.io/name: app-no-mounts
-    app.kubernetes.io/instance: test-release
-    app.kubernetes.io/version: "1.0.0"
-    app.kubernetes.io/managed-by: Helm
-type: Opaque
-stringData:
-  TOKEN: tok-123
----
-# Source: poly/templates/main.yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: test-release-db-creds
-  labels:
-    helm.sh/chart: poly-3.0.5
-    app.kubernetes.io/name: app-secret-created
-    app.kubernetes.io/instance: test-release
-    app.kubernetes.io/version: "1.0.0"
-    app.kubernetes.io/managed-by: Helm
-type: Opaque
-stringData:
-  db-pass: super-secret-password
----
-# Source: poly/templates/main.yaml
-apiVersion: v1
 kind: ConfigMap
 metadata:
   name: test-release-app-config
@@ -360,9 +315,15 @@ spec:
           - mountPath: /etc/combined/cm
             name: cm-combined-cm
             readOnly: true
+          - mountPath: /etc/combined/existing-cm
+            name: cm-shared-existing-cm
+            readOnly: true
           - mountPath: /etc/combined/secret
-            name: secret-combined-secret
+            name: secret-combined-es-secret
             readOnly: false
+          - mountPath: /etc/combined/ca
+            name: secret-existing-ca-secret
+            readOnly: true
       imagePullSecrets: 
         []
       volumes:
@@ -374,9 +335,85 @@ spec:
       - name: cm-combined-cm
         configMap:
           name: test-release-combined-cm
-      - name: secret-combined-secret
+      - name: cm-shared-existing-cm
+        configMap:
+          name: shared-existing-cm
+      - name: secret-combined-es-secret
         secret:
-          secretName: test-release-combined-secret
+          secretName: test-release-combined-es-secret
+      - name: secret-existing-ca-secret
+        secret:
+          secretName: existing-ca-secret
+      affinity: {}
+      nodeSelector: {}
+      tolerations: []
+      restartPolicy: Always
+      serviceAccountName: default
+      automountServiceAccountToken: true
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 0
+---
+# Source: poly/templates/main.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-release-app-external-secret-mount
+  labels:
+    helm.sh/chart: poly-3.0.5
+    app.kubernetes.io/name: app-external-secret-mount
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app-external-secret-mount
+      app.kubernetes.io/instance: test-release
+  template:
+    metadata:
+      name: test-release-app-external-secret-mount
+      labels:
+        helm.sh/chart: poly-3.0.5
+        app.kubernetes.io/name: app-external-secret-mount
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      containers:
+        - image: myregistry.com/demo:v1.0.0
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - sleep
+                - "3"
+          name: app-external-secret-mount
+          ports:
+          - containerPort: 80
+            name: http
+            protocol: TCP
+          resources: {}
+          volumeMounts:
+          - mountPath: /etc/db/password
+            name: secret-db-creds
+            readOnly: true
+            subPath: password
+      imagePullSecrets: 
+        []
+      volumes:
+      - name: secret-db-creds
+        secret:
+          secretName: test-release-db-creds
+          items:
+            - key: db-pass
+              path: password
       affinity: {}
       nodeSelector: {}
       tolerations: []
@@ -454,76 +491,6 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: test-release-app-secret-created
-  labels:
-    helm.sh/chart: poly-3.0.5
-    app.kubernetes.io/name: app-secret-created
-    app.kubernetes.io/instance: test-release
-    app.kubernetes.io/version: "1.0.0"
-    app.kubernetes.io/managed-by: Helm
-spec:
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: app-secret-created
-      app.kubernetes.io/instance: test-release
-  template:
-    metadata:
-      name: test-release-app-secret-created
-      labels:
-        helm.sh/chart: poly-3.0.5
-        app.kubernetes.io/name: app-secret-created
-        app.kubernetes.io/instance: test-release
-        app.kubernetes.io/version: "1.0.0"
-        app.kubernetes.io/managed-by: Helm
-    spec:
-      containers:
-        - image: myregistry.com/demo:v1.0.0
-          imagePullPolicy: IfNotPresent
-          lifecycle:
-            preStop:
-              exec:
-                command:
-                - sleep
-                - "3"
-          name: app-secret-created
-          ports:
-          - containerPort: 80
-            name: http
-            protocol: TCP
-          resources: {}
-          volumeMounts:
-          - mountPath: /etc/db/password
-            name: secret-db-creds
-            readOnly: true
-            subPath: password
-      imagePullSecrets: 
-        []
-      volumes:
-      - name: secret-db-creds
-        secret:
-          secretName: test-release-db-creds
-          items:
-            - key: db-pass
-              path: password
-      affinity: {}
-      nodeSelector: {}
-      tolerations: []
-      restartPolicy: Always
-      serviceAccountName: default
-      automountServiceAccountToken: true
-  replicas: 1
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 25%
-      maxUnavailable: 25%
-  progressDeadlineSeconds: 600
-  revisionHistoryLimit: 0
----
-# Source: poly/templates/main.yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
   name: test-release-app-secret-existing
   labels:
     helm.sh/chart: poly-3.0.5
@@ -565,6 +532,9 @@ spec:
           - mountPath: /etc/tls
             name: secret-tls-secret
             readOnly: true
+          - mountPath: /etc/shared-tls
+            name: secret-shared-tls
+            readOnly: true
       imagePullSecrets: 
         []
       volumes:
@@ -572,6 +542,9 @@ spec:
         secret:
           secretName: tls-secret
           defaultMode: 256
+      - name: secret-shared-tls
+        secret:
+          secretName: test-release-shared-tls
       affinity: {}
       nodeSelector: {}
       tolerations: []
@@ -586,3 +559,77 @@ spec:
       maxUnavailable: 25%
   progressDeadlineSeconds: 600
   revisionHistoryLimit: 0
+
+
+
+---
+# Source: poly/templates/main.yaml
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: test-release-combined-es-secret
+  labels:
+    helm.sh/chart: poly-3.0.5
+    app.kubernetes.io/name: app-combined-mounts
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: vault-backend
+  target:
+    name: test-release-combined-es-secret
+  data:
+    - remoteRef:
+        key: secret/data/combined
+        property: api_key
+      secretKey: API_KEY
+---
+# Source: poly/templates/main.yaml
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: test-release-db-creds
+  labels:
+    helm.sh/chart: poly-3.0.5
+    app.kubernetes.io/name: app-external-secret-mount
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: vault-backend
+  target:
+    creationPolicy: Owner
+    name: test-release-db-creds
+  data:
+    - remoteRef:
+        key: secret/data/db
+        property: password
+      secretKey: db-pass
+---
+# Source: poly/templates/main.yaml
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: test-release-env-only-es
+  labels:
+    helm.sh/chart: poly-3.0.5
+    app.kubernetes.io/name: app-no-mounts
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  refreshInterval: 30m
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: vault-backend
+  target:
+    name: test-release-env-only-es
+  dataFrom:
+    - extract:
+        key: secret/data/env-only
