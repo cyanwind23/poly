@@ -393,6 +393,17 @@ default:
     # Is this configmap type file-config? If true, use second `data` format below
     isFileType: false
 
+    # Quick volume mount options (omit mountPath to skip mounting)
+    # mountPath: /etc/config
+    # subPath: app.conf
+    # readOnly: true
+    # volumeName: ""
+    # defaultMode: 420
+    # optional: false
+    # items:
+    #   - key: app.conf
+    #     path: app.conf
+
     # Provide data for normal configmap, optional
     #
     # data:
@@ -404,6 +415,30 @@ default:
     #     hello-world-1
     #     hello-world-2
     #     ...
+
+  # Secret config
+  secrets: []
+    # - name: main
+    #   create: false
+    #   # Provide secret fullname, the fixed name with highest priority, must be unique, optional
+    #   fullName: ""
+    #   type: Opaque
+    #   annotations: {}
+    #
+    #   # Quick volume mount options (omit mountPath to skip mounting)
+    #   mountPath: /etc/secrets
+    #   subPath: token
+    #   readOnly: true
+    #   volumeName: ""
+    #   defaultMode: 256
+    #   optional: false
+    #   items:
+    #     - key: token
+    #       path: token
+    #
+    #   # Provide base64-encoded data or plain-text stringData when create: true
+    #   data: {}
+    #   stringData: {}
 
   # Enable vault for your app
   #

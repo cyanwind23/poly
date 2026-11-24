@@ -50,6 +50,9 @@
 {{- include "poly.v3.vault.configmap" $ -}}
 {{- end -}}
 
+{{- /* Secret resources */}}
+{{- include "poly.v3.secret" $ -}}
+
 {{- /* PVC resources */}}
 {{- include "poly.v3.pvc" $ }}
 
