@@ -492,3 +492,60 @@ default:
 
     # More info: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#servicemonitorspec
     extraConfig: {}
+
+  # Gateway API config (Kubernetes Gateway API v1)
+  # More info: https://gateway-api.sigs.k8s.io/
+  gatewayApi:
+    httpRoute:
+      enabled: false
+      name: ""
+      annotations: {}
+      parentRefs: []
+        # - name: main-gateway
+        #   namespace: gateway-system
+      hostnames: []
+        # - api.example.com
+      rules: []
+        # - matches:
+        #     - path:
+        #         type: PathPrefix
+        #         value: /
+      extraRoutes: []
+
+    grpcRoute:
+      enabled: false
+      name: ""
+      annotations: {}
+      parentRefs: []
+        # - name: grpc-gateway
+        #   namespace: gateway-system
+      hostnames: []
+        # - grpc.example.com
+      rules: []
+        # - matches:
+        #     - method:
+        #         service: my.package.Service
+      extraRoutes: []
+
+  # Cilium config (CiliumNetworkPolicy & CiliumEnvoyConfig)
+  # More info: https://docs.cilium.io/en/stable/security/policy/
+  cilium:
+    networkPolicy:
+      enabled: false
+      name: ""
+      annotations: {}
+      description: ""
+      endpointSelector: {}
+      ingress: []
+      ingressDeny: []
+      egress: []
+      egressDeny: []
+      specs: []
+
+    envoyConfig:
+      enabled: false
+      name: ""
+      annotations: {}
+      services: []
+      backendServices: []
+      resources: []

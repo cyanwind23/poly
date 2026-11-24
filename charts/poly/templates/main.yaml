@@ -65,6 +65,13 @@
 {{- /* Rollout resources */}}
 {{- include "poly.v3.rollout" $ }}
 
+{{- /* Gateway API resources */}}
+{{- include "poly.v3.httproute" $ -}}
+{{- include "poly.v3.grpcroute" $ -}}
+
+{{- /* Cilium resources */}}
+{{- include "poly.v3.cilium" $ -}}
+
 {{- /* Rollout dynamic configmap */}}
 {{- end -}}
 {{- end -}}
