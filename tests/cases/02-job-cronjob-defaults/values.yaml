@@ -1,0 +1,43 @@
+default:
+  quickConfigs:
+    healthcheckPath: "/healthz"
+    port: 8080
+
+myApiDeployment:
+  enabled: true
+  deployType: Deployment
+  image:
+    repository: myregistry.com/api-service
+    tag: "v1.0.0"
+
+myDbStatefulSet:
+  enabled: true
+  deployType: StatefulSet
+  image:
+    repository: myregistry.com/db-service
+    tag: "v2.0.0"
+
+myAgentDaemonSet:
+  enabled: true
+  deployType: DaemonSet
+  image:
+    repository: myregistry.com/agent-service
+    tag: "v3.0.0"
+
+myMigrationJob:
+  enabled: true
+  deployType: Job
+  image:
+    repository: myregistry.com/db-migrator
+    tag: "v1.0.0"
+  command: ["/bin/sh", "-c", "migrate.sh"]
+
+myDailyBackupCronJob:
+  enabled: true
+  deployType: CronJob
+  image:
+    repository: myregistry.com/db-backup
+    tag: "v2.1.0"
+  workloadCommonConfigs:
+    cronjob:
+      schedule: "0 2 * * *"
