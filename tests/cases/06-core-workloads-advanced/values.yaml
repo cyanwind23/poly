@@ -1,0 +1,129 @@
+default:
+  probes:
+    enabled: false
+  image:
+    repository: myregistry.com/demo
+    tag: "v1.0.0"
+    pullPolicy: IfNotPresent
+
+# App 1: env shortcuts, envFrom (-prefix & secretRef), service (ports + extraServices),
+# ingress (hosts + tls), autoscaling (HPA), serviceMonitor
+appEnvNetworking:
+  enabled: true
+  deployType: Deployment
+  replicas: 2
+  env:
+    PLAIN_ENV: "production"
+    CFG_ENV: "~cfm:app-key:app-config:true"
+    SCR_ENV: "~scr:db-pass:app-secret:false"
+    POD_NAME: "~fr:metadata.name:v1"
+    CPU_LIMIT: "~rfr:limits.cpu:app-env-networking:1m"
+  envFrom:
+    - "cfm:-app-cfg:true"
+    - secretRef:
+        name: ext-secret
+        optional: false
+  ports:
+    - "8080:http:TCP"
+    - "9090:metrics:TCP"
+  service:
+    enabled: true
+    type: ClusterIP
+    ports:
+      - "80:8080:TCP:http"
+      - "9090:9090:TCP:metrics"
+    extraServices:
+      - enabled: true
+        name: "-headless"
+        type: "none"
+        ports:
+          - "8080:8080:TCP:http"
+  ingress:
+    enabled: true
+    className: "nginx"
+    annotations:
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    hosts:
+      - host: "app.example.com"
+        paths:
+          - "/:Prefix"
+          - "/metrics:Exact::9090"
+    tls:
+      - secretName: "app-tls"
+        hosts:
+          - "app.example.com"
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 75
+    targetMemoryUtilizationPercentage: 80
+  serviceMonitor:
+    enabled: true
+    endpoints:
+      - port: metrics
+        path: /metrics
+        interval: 15s
+
+# App 2: serviceAccount (create + annotations) + vault (annotation mode)
+appVaultSa:
+  enabled: true
+  deployType: Deployment
+  replicas: 1
+  service:
+    enabled: false
+  serviceAccount:
+    create: true
+    annotations:
+      eks.amazonaws.com/role-arn: "arn:aws:iam::123456789012:role/demo-role"
+  vault:
+    enabled: true
+    config:
+      path: "secret/data/demo"
+      authPath: "auth/kubernetes"
+      role: "demo-role"
+      serviceServer: "https://vault.example.com"
+    template:
+      type: "annotation"
+      name: "config.env"
+      content: |
+        {{- with secret "secret/data/demo" -}}
+        DB_PASS="{{ .Data.data.password }}"
+        {{- end -}}
+    runContainer:
+      command: ["/bin/sh", "-c"]
+      runtimeArgs: [". /vault/secrets/config.env && exec /app/server"]
+
+# App 3: Argo Rollout (blue-green with preview service and preview ingress)
+appRolloutBg:
+  enabled: true
+  deployType: Deployment
+  replicas: 2
+  service:
+    enabled: true
+    ports:
+      - "80:8080:TCP:http"
+  rollout:
+    enabled: true
+    strategy:
+      blueGreen:
+        previewReplicaCount: 1
+        autoPromotionEnabled: false
+        autoPromotionSeconds: 30
+        scaleDownDelaySeconds: 30
+        scaleDownDelayRevisionLimit: 2
+        abortScaleDownDelaySeconds: 30
+    servicePreview:
+      enabled: true
+      name: "rollout-svc-preview"
+    ingressPreview:
+      enabled: true
+      name: "-preview"
+      hosts:
+        - host: "rollout.example.com"
+          paths:
+            - "/preview/:Prefix:rollout-svc-preview"
+      tls:
+        - secretName: "rollout-preview-tls"
+          hosts:
+            - "rollout.example.com"
