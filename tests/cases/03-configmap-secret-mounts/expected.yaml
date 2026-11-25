@@ -5,7 +5,7 @@ kind: ConfigMap
 metadata:
   name: test-release-app-config
   labels:
-    helm.sh/chart: poly-3.0.5
+    helm.sh/chart: poly-3.1.0
     app.kubernetes.io/name: app-cm-created-file
     app.kubernetes.io/instance: test-release
     app.kubernetes.io/version: "1.0.0"
@@ -21,7 +21,7 @@ kind: ConfigMap
 metadata:
   name: test-release-combined-cm
   labels:
-    helm.sh/chart: poly-3.0.5
+    helm.sh/chart: poly-3.1.0
     app.kubernetes.io/name: app-combined-mounts
     app.kubernetes.io/instance: test-release
     app.kubernetes.io/version: "1.0.0"
@@ -35,7 +35,7 @@ kind: ConfigMap
 metadata:
   name: test-release-env-only-cm
   labels:
-    helm.sh/chart: poly-3.0.5
+    helm.sh/chart: poly-3.1.0
     app.kubernetes.io/name: app-no-mounts
     app.kubernetes.io/instance: test-release
     app.kubernetes.io/version: "1.0.0"
@@ -49,7 +49,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: data-pvc
   labels:
-    helm.sh/chart: poly-3.0.5
+    helm.sh/chart: poly-3.1.0
     app.kubernetes.io/name: app-combined-mounts
     app.kubernetes.io/instance: test-release
     app.kubernetes.io/version: "1.0.0"
@@ -67,7 +67,7 @@ kind: Deployment
 metadata:
   name: test-release-app-cm-created-file
   labels:
-    helm.sh/chart: poly-3.0.5
+    helm.sh/chart: poly-3.1.0
     app.kubernetes.io/name: app-cm-created-file
     app.kubernetes.io/instance: test-release
     app.kubernetes.io/version: "1.0.0"
@@ -81,7 +81,7 @@ spec:
     metadata:
       name: test-release-app-cm-created-file
       labels:
-        helm.sh/chart: poly-3.0.5
+        helm.sh/chart: poly-3.1.0
         app.kubernetes.io/name: app-cm-created-file
         app.kubernetes.io/instance: test-release
         app.kubernetes.io/version: "1.0.0"
@@ -133,7 +133,7 @@ kind: Deployment
 metadata:
   name: test-release-app-cm-existing-options
   labels:
-    helm.sh/chart: poly-3.0.5
+    helm.sh/chart: poly-3.1.0
     app.kubernetes.io/name: app-cm-existing-options
     app.kubernetes.io/instance: test-release
     app.kubernetes.io/version: "1.0.0"
@@ -147,7 +147,7 @@ spec:
     metadata:
       name: test-release-app-cm-existing-options
       labels:
-        helm.sh/chart: poly-3.0.5
+        helm.sh/chart: poly-3.1.0
         app.kubernetes.io/name: app-cm-existing-options
         app.kubernetes.io/instance: test-release
         app.kubernetes.io/version: "1.0.0"
@@ -205,7 +205,7 @@ kind: Deployment
 metadata:
   name: test-release-app-cm-prefix-name
   labels:
-    helm.sh/chart: poly-3.0.5
+    helm.sh/chart: poly-3.1.0
     app.kubernetes.io/name: app-cm-prefix-name
     app.kubernetes.io/instance: test-release
     app.kubernetes.io/version: "1.0.0"
@@ -219,7 +219,7 @@ spec:
     metadata:
       name: test-release-app-cm-prefix-name
       labels:
-        helm.sh/chart: poly-3.0.5
+        helm.sh/chart: poly-3.1.0
         app.kubernetes.io/name: app-cm-prefix-name
         app.kubernetes.io/instance: test-release
         app.kubernetes.io/version: "1.0.0"
@@ -271,7 +271,7 @@ kind: Deployment
 metadata:
   name: test-release-app-combined-mounts
   labels:
-    helm.sh/chart: poly-3.0.5
+    helm.sh/chart: poly-3.1.0
     app.kubernetes.io/name: app-combined-mounts
     app.kubernetes.io/instance: test-release
     app.kubernetes.io/version: "1.0.0"
@@ -285,7 +285,7 @@ spec:
     metadata:
       name: test-release-app-combined-mounts
       labels:
-        helm.sh/chart: poly-3.0.5
+        helm.sh/chart: poly-3.1.0
         app.kubernetes.io/name: app-combined-mounts
         app.kubernetes.io/instance: test-release
         app.kubernetes.io/version: "1.0.0"
@@ -365,7 +365,7 @@ kind: Deployment
 metadata:
   name: test-release-app-external-secret-mount
   labels:
-    helm.sh/chart: poly-3.0.5
+    helm.sh/chart: poly-3.1.0
     app.kubernetes.io/name: app-external-secret-mount
     app.kubernetes.io/instance: test-release
     app.kubernetes.io/version: "1.0.0"
@@ -379,7 +379,7 @@ spec:
     metadata:
       name: test-release-app-external-secret-mount
       labels:
-        helm.sh/chart: poly-3.0.5
+        helm.sh/chart: poly-3.1.0
         app.kubernetes.io/name: app-external-secret-mount
         app.kubernetes.io/instance: test-release
         app.kubernetes.io/version: "1.0.0"
@@ -435,7 +435,7 @@ kind: Deployment
 metadata:
   name: test-release-app-no-mounts
   labels:
-    helm.sh/chart: poly-3.0.5
+    helm.sh/chart: poly-3.1.0
     app.kubernetes.io/name: app-no-mounts
     app.kubernetes.io/instance: test-release
     app.kubernetes.io/version: "1.0.0"
@@ -449,7 +449,7 @@ spec:
     metadata:
       name: test-release-app-no-mounts
       labels:
-        helm.sh/chart: poly-3.0.5
+        helm.sh/chart: poly-3.1.0
         app.kubernetes.io/name: app-no-mounts
         app.kubernetes.io/instance: test-release
         app.kubernetes.io/version: "1.0.0"
@@ -493,7 +493,7 @@ kind: Deployment
 metadata:
   name: test-release-app-secret-existing
   labels:
-    helm.sh/chart: poly-3.0.5
+    helm.sh/chart: poly-3.1.0
     app.kubernetes.io/name: app-secret-existing
     app.kubernetes.io/instance: test-release
     app.kubernetes.io/version: "1.0.0"
@@ -507,7 +507,7 @@ spec:
     metadata:
       name: test-release-app-secret-existing
       labels:
-        helm.sh/chart: poly-3.0.5
+        helm.sh/chart: poly-3.1.0
         app.kubernetes.io/name: app-secret-existing
         app.kubernetes.io/instance: test-release
         app.kubernetes.io/version: "1.0.0"
@@ -566,7 +566,7 @@ kind: ClusterSecretStore
 metadata:
   name: aws-cluster-store
   labels:
-    helm.sh/chart: poly-3.0.5
+    helm.sh/chart: poly-3.1.0
     app.kubernetes.io/name: shared-secret-stores
     app.kubernetes.io/instance: test-release
     app.kubernetes.io/version: "1.0.0"
@@ -588,7 +588,7 @@ kind: ExternalSecret
 metadata:
   name: test-release-combined-es-secret
   labels:
-    helm.sh/chart: poly-3.0.5
+    helm.sh/chart: poly-3.1.0
     app.kubernetes.io/name: app-combined-mounts
     app.kubernetes.io/instance: test-release
     app.kubernetes.io/version: "1.0.0"
@@ -612,7 +612,7 @@ kind: ExternalSecret
 metadata:
   name: test-release-db-creds
   labels:
-    helm.sh/chart: poly-3.0.5
+    helm.sh/chart: poly-3.1.0
     app.kubernetes.io/name: app-external-secret-mount
     app.kubernetes.io/instance: test-release
     app.kubernetes.io/version: "1.0.0"
@@ -637,7 +637,7 @@ kind: ExternalSecret
 metadata:
   name: test-release-env-only-es
   labels:
-    helm.sh/chart: poly-3.0.5
+    helm.sh/chart: poly-3.1.0
     app.kubernetes.io/name: app-no-mounts
     app.kubernetes.io/instance: test-release
     app.kubernetes.io/version: "1.0.0"
@@ -659,7 +659,7 @@ kind: SecretStore
 metadata:
   name: test-release-vault-store
   labels:
-    helm.sh/chart: poly-3.0.5
+    helm.sh/chart: poly-3.1.0
     app.kubernetes.io/name: shared-secret-stores
     app.kubernetes.io/instance: test-release
     app.kubernetes.io/version: "1.0.0"

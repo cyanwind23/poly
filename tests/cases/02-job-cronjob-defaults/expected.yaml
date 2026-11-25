@@ -5,7 +5,7 @@ kind: Service
 metadata:
   name: test-release-my-agent-daemon-set
   labels:
-    helm.sh/chart: poly-3.0.5
+    helm.sh/chart: poly-3.1.0
     app.kubernetes.io/name: my-agent-daemon-set
     app.kubernetes.io/instance: test-release
     app.kubernetes.io/version: "1.0.0"
@@ -26,7 +26,7 @@ kind: Service
 metadata:
   name: test-release-my-api-deployment
   labels:
-    helm.sh/chart: poly-3.0.5
+    helm.sh/chart: poly-3.1.0
     app.kubernetes.io/name: my-api-deployment
     app.kubernetes.io/instance: test-release
     app.kubernetes.io/version: "1.0.0"
@@ -47,7 +47,7 @@ kind: Service
 metadata:
   name: test-release-my-db-stateful-set
   labels:
-    helm.sh/chart: poly-3.0.5
+    helm.sh/chart: poly-3.1.0
     app.kubernetes.io/name: my-db-stateful-set
     app.kubernetes.io/instance: test-release
     app.kubernetes.io/version: "1.0.0"
@@ -68,7 +68,7 @@ kind: DaemonSet
 metadata:
   name: test-release-my-agent-daemon-set
   labels:
-    helm.sh/chart: poly-3.0.5
+    helm.sh/chart: poly-3.1.0
     app.kubernetes.io/name: my-agent-daemon-set
     app.kubernetes.io/instance: test-release
     app.kubernetes.io/version: "1.0.0"
@@ -82,7 +82,7 @@ spec:
     metadata:
       name: test-release-my-agent-daemon-set
       labels:
-        helm.sh/chart: poly-3.0.5
+        helm.sh/chart: poly-3.1.0
         app.kubernetes.io/name: my-agent-daemon-set
         app.kubernetes.io/instance: test-release
         app.kubernetes.io/version: "1.0.0"
@@ -124,7 +124,7 @@ kind: Deployment
 metadata:
   name: test-release-my-api-deployment
   labels:
-    helm.sh/chart: poly-3.0.5
+    helm.sh/chart: poly-3.1.0
     app.kubernetes.io/name: my-api-deployment
     app.kubernetes.io/instance: test-release
     app.kubernetes.io/version: "1.0.0"
@@ -138,7 +138,7 @@ spec:
     metadata:
       name: test-release-my-api-deployment
       labels:
-        helm.sh/chart: poly-3.0.5
+        helm.sh/chart: poly-3.1.0
         app.kubernetes.io/name: my-api-deployment
         app.kubernetes.io/instance: test-release
         app.kubernetes.io/version: "1.0.0"
@@ -182,7 +182,7 @@ kind: StatefulSet
 metadata:
   name: test-release-my-db-stateful-set
   labels:
-    helm.sh/chart: poly-3.0.5
+    helm.sh/chart: poly-3.1.0
     app.kubernetes.io/name: my-db-stateful-set
     app.kubernetes.io/instance: test-release
     app.kubernetes.io/version: "1.0.0"
@@ -197,7 +197,7 @@ spec:
     metadata:
       name: test-release-my-db-stateful-set
       labels:
-        helm.sh/chart: poly-3.0.5
+        helm.sh/chart: poly-3.1.0
         app.kubernetes.io/name: my-db-stateful-set
         app.kubernetes.io/instance: test-release
         app.kubernetes.io/version: "1.0.0"
@@ -240,7 +240,7 @@ kind: Job
 metadata:
   name: test-release-my-migration-job
   labels:
-    helm.sh/chart: poly-3.0.5
+    helm.sh/chart: poly-3.1.0
     app.kubernetes.io/name: my-migration-job
     app.kubernetes.io/instance: test-release
     app.kubernetes.io/version: "1.0.0"
@@ -250,7 +250,7 @@ spec:
     metadata:
       name: test-release-my-migration-job
       labels:
-        helm.sh/chart: poly-3.0.5
+        helm.sh/chart: poly-3.1.0
         app.kubernetes.io/name: my-migration-job
         app.kubernetes.io/instance: test-release
         app.kubernetes.io/version: "1.0.0"
@@ -292,7 +292,7 @@ kind: CronJob
 metadata:
   name: test-release-my-daily-backup-cron-job
   labels:
-    helm.sh/chart: poly-3.0.5
+    helm.sh/chart: poly-3.1.0
     app.kubernetes.io/name: my-daily-backup-cron-job
     app.kubernetes.io/instance: test-release
     app.kubernetes.io/version: "1.0.0"
@@ -306,7 +306,7 @@ spec:
     metadata:
       name: test-release-my-daily-backup-cron-job
       labels:
-        helm.sh/chart: poly-3.0.5
+        helm.sh/chart: poly-3.1.0
         app.kubernetes.io/name: my-daily-backup-cron-job
         app.kubernetes.io/instance: test-release
         app.kubernetes.io/version: "1.0.0"
@@ -316,7 +316,7 @@ spec:
         metadata:
           name: test-release-my-daily-backup-cron-job
           labels:
-            helm.sh/chart: poly-3.0.5
+            helm.sh/chart: poly-3.1.0
             app.kubernetes.io/name: my-daily-backup-cron-job
             app.kubernetes.io/instance: test-release
             app.kubernetes.io/version: "1.0.0"

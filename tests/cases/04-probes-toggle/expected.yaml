@@ -5,7 +5,7 @@ kind: Deployment
 metadata:
   name: test-release-app1-inherited-probes
   labels:
-    helm.sh/chart: poly-3.0.5
+    helm.sh/chart: poly-3.1.0
     app.kubernetes.io/name: app1-inherited-probes
     app.kubernetes.io/instance: test-release
     app.kubernetes.io/version: "1.0.0"
@@ -19,7 +19,7 @@ spec:
     metadata:
       name: test-release-app1-inherited-probes
       labels:
-        helm.sh/chart: poly-3.0.5
+        helm.sh/chart: poly-3.1.0
         app.kubernetes.io/name: app1-inherited-probes
         app.kubernetes.io/instance: test-release
         app.kubernetes.io/version: "1.0.0"
@@ -83,7 +83,7 @@ kind: Deployment
 metadata:
   name: test-release-app2-probes-disabled
   labels:
-    helm.sh/chart: poly-3.0.5
+    helm.sh/chart: poly-3.1.0
     app.kubernetes.io/name: app2-probes-disabled
     app.kubernetes.io/instance: test-release
     app.kubernetes.io/version: "1.0.0"
@@ -97,7 +97,7 @@ spec:
     metadata:
       name: test-release-app2-probes-disabled
       labels:
-        helm.sh/chart: poly-3.0.5
+        helm.sh/chart: poly-3.1.0
         app.kubernetes.io/name: app2-probes-disabled
         app.kubernetes.io/instance: test-release
         app.kubernetes.io/version: "1.0.0"
@@ -141,7 +141,7 @@ kind: Deployment
 metadata:
   name: test-release-app3-readiness-disabled
   labels:
-    helm.sh/chart: poly-3.0.5
+    helm.sh/chart: poly-3.1.0
     app.kubernetes.io/name: app3-readiness-disabled
     app.kubernetes.io/instance: test-release
     app.kubernetes.io/version: "1.0.0"
@@ -155,7 +155,7 @@ spec:
     metadata:
       name: test-release-app3-readiness-disabled
       labels:
-        helm.sh/chart: poly-3.0.5
+        helm.sh/chart: poly-3.1.0
         app.kubernetes.io/name: app3-readiness-disabled
         app.kubernetes.io/instance: test-release
         app.kubernetes.io/version: "1.0.0"
@@ -209,7 +209,7 @@ kind: Deployment
 metadata:
   name: test-release-app4-shorthand-probe
   labels:
-    helm.sh/chart: poly-3.0.5
+    helm.sh/chart: poly-3.1.0
     app.kubernetes.io/name: app4-shorthand-probe
     app.kubernetes.io/instance: test-release
     app.kubernetes.io/version: "1.0.0"
@@ -223,7 +223,7 @@ spec:
     metadata:
       name: test-release-app4-shorthand-probe
       labels:
-        helm.sh/chart: poly-3.0.5
+        helm.sh/chart: poly-3.1.0
         app.kubernetes.io/name: app4-shorthand-probe
         app.kubernetes.io/instance: test-release
         app.kubernetes.io/version: "1.0.0"
@@ -277,7 +277,7 @@ kind: Deployment
 metadata:
   name: test-release-app6-probes-override
   labels:
-    helm.sh/chart: poly-3.0.5
+    helm.sh/chart: poly-3.1.0
     app.kubernetes.io/name: app6-probes-override
     app.kubernetes.io/instance: test-release
     app.kubernetes.io/version: "1.0.0"
@@ -291,7 +291,7 @@ spec:
     metadata:
       name: test-release-app6-probes-override
       labels:
-        helm.sh/chart: poly-3.0.5
+        helm.sh/chart: poly-3.1.0
         app.kubernetes.io/name: app6-probes-override
         app.kubernetes.io/instance: test-release
         app.kubernetes.io/version: "1.0.0"
@@ -345,7 +345,7 @@ kind: Job
 metadata:
   name: test-release-app5-job-probes-enabled
   labels:
-    helm.sh/chart: poly-3.0.5
+    helm.sh/chart: poly-3.1.0
     app.kubernetes.io/name: app5-job-probes-enabled
     app.kubernetes.io/instance: test-release
     app.kubernetes.io/version: "1.0.0"
@@ -355,7 +355,7 @@ spec:
     metadata:
       name: test-release-app5-job-probes-enabled
       labels:
-        helm.sh/chart: poly-3.0.5
+        helm.sh/chart: poly-3.1.0
         app.kubernetes.io/name: app5-job-probes-enabled
         app.kubernetes.io/instance: test-release
         app.kubernetes.io/version: "1.0.0"
