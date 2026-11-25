@@ -1,0 +1,177 @@
+default:
+  disableProbes: ["all"]
+  service:
+    enabled: false
+  image:
+    repository: myregistry.com/demo
+    tag: "v1.0.0"
+  externalSecret:
+    apiVersion: external-secrets.io/v1
+    refreshInterval: 1h
+    secretStoreRef:
+      name: vault-backend
+      kind: ClusterSecretStore
+
+# Scenario 1: Created file-type ConfigMap with mountPath
+appCmCreatedFile:
+  enabled: true
+  configMaps:
+    - name: app-config
+      create: true
+      isFileType: true
+      mountPath: /etc/app/config
+      data:
+        config.yaml: |
+          port: 8080
+          env: prod
+
+# Scenario 2: Existing ConfigMap (exists: true) with mountPath, subPath, items, defaultMode, optional
+appCmExistingOptions:
+  enabled: true
+  configMaps:
+    - name: external-cm
+      exists: true
+      mountPath: /etc/app/settings.json
+      subPath: settings.json
+      defaultMode: 420
+      optional: true
+      items:
+        - key: raw-settings
+          path: settings.json
+
+# Scenario 3: Existing ConfigMap with -prefix name
+appCmPrefixName:
+  enabled: true
+  configMaps:
+    - name: -shared-cm
+      exists: true
+      mountPath: /etc/shared
+
+# Scenario 4: Existing Secrets (exists: true) with plain name and -prefix name
+appSecretExisting:
+  enabled: true
+  secrets:
+    - name: tls-secret
+      exists: true
+      mountPath: /etc/tls
+      defaultMode: 256
+      readOnly: true
+    - name: -shared-tls
+      exists: true
+      mountPath: /etc/shared-tls
+
+# Scenario 5: ExternalSecret (inherits default secretStoreRef, refreshPolicy: OnChange) with mountPath, subPath, items
+appExternalSecretMount:
+  enabled: true
+  secrets:
+    - name: db-creds
+      mountPath: /etc/db/password
+      subPath: password
+      items:
+        - key: db-pass
+          path: password
+      externalSecret:
+        enabled: true
+        refreshPolicy: OnChange
+        refreshInterval: ""
+        target:
+          creationPolicy: Owner
+        data:
+          - secretKey: db-pass
+            remoteRef:
+              key: secret/data/db
+              property: password
+
+# Scenario 8: Shared SecretStore & ClusterSecretStore (deployType: None, external-secrets.io/v1)
+sharedSecretStores:
+  enabled: true
+  deployType: None
+  secretStores:
+    - name: -vault-store
+      controller: "eso-main"
+      annotations:
+        app.example.com/managed-by: "{{ .Release.Name }}"
+      retrySettings:
+        maxRetries: 5
+        retryInterval: "10s"
+      provider:
+        vault:
+          server: "https://vault.example.com"
+          path: "secret"
+          version: "v2"
+          auth:
+            kubernetes:
+              mountPath: "kubernetes"
+              role: "demo-role"
+              serviceAccountRef:
+                name: "default"
+    - name: aws-cluster-store
+      kind: ClusterSecretStore
+      conditions:
+        - namespaces:
+            - "production"
+      provider:
+        aws:
+          service: SecretsManager
+          region: ap-southeast-1
+    - name: disabled-store
+      enabled: false
+      provider:
+        vault:
+          server: "https://disabled.example.com"
+
+# Scenario 6: Combined volumes + volumeMounts + pvcs + created & existing configMaps + ExternalSecret + existing secrets
+appCombinedMounts:
+  enabled: true
+  volumes:
+    - name: scratch-vol
+      emptyDir: {}
+  volumeMounts:
+    - name: scratch-vol
+      mountPath: /tmp/scratch
+  pvcs:
+    - name: data-pvc
+      size: 1Gi
+      mountPath: /var/lib/data
+  configMaps:
+    - name: combined-cm
+      create: true
+      mountPath: /etc/combined/cm
+      data:
+        APP_ENV: staging
+    - name: shared-existing-cm
+      exists: true
+      mountPath: /etc/combined/existing-cm
+  secrets:
+    - name: combined-es-secret
+      mountPath: /etc/combined/secret
+      readOnly: false
+      externalSecret:
+        enabled: true
+        data:
+          - secretKey: API_KEY
+            remoteRef:
+              key: secret/data/combined
+              property: api_key
+    - name: existing-ca-secret
+      exists: true
+      mountPath: /etc/combined/ca
+
+# Scenario 7: ExternalSecret (dataFrom + custom apiVersion) & ConfigMap without mountPath
+appNoMounts:
+  enabled: true
+  configMaps:
+    - name: env-only-cm
+      create: true
+      data:
+        LOG_LEVEL: info
+  secrets:
+    - name: env-only-es
+      externalSecret:
+        enabled: true
+        apiVersion: external-secrets.io/v1beta1
+        name: -env-only-es
+        refreshInterval: 30m
+        dataFrom:
+          - extract:
+              key: secret/data/env-only

@@ -1,0 +1,126 @@
+{{- define "poly.v3.container" }}
+{{- $app := $.currentApp -}}
+name: {{ $app.containerName | default (include "poly.v3.name" $) }}
+image: {{ include "poly.v3.image" $ | quote }}
+imagePullPolicy: {{ $app.image.pullPolicy }}
+{{- include "poly.v3.container.cmd" $ }}
+ports: {{- include "poly.v3.container.ports" $ | nindent 2 }}
+{{- with $app.env }}
+env: {{- include "poly.v3.container.env" $ | nindent 2 }}
+{{- end -}}
+{{- with $app.envFrom }}
+envFrom: {{- include "poly.v3.container.envFrom" $ | nindent 2 }}
+{{- end -}}
+{{- $volumeMounts := (include "poly.v3.container.volumeMounts" $) | trimAll "\n" -}}
+{{- with $volumeMounts }}
+volumeMounts: {{- . | nindent 2 }}
+{{- end }}
+resources: {{- toYaml $app.resources | nindent 2 }}
+{{- $isJobOrCronJob := mustHas $app.deployType (list "Job" "CronJob") -}}
+{{- if or (not $isJobOrCronJob) $app.lifecycleOverride $app.lifecycle.enabled }}
+{{ include "poly.v3.container.lifecycle" $ }}
+{{- end -}}
+{{- if $app.probesOverride }}
+{{ toYaml $app.probesOverride }}
+{{- else -}}
+  {{- $probes := $app.probes | default dict -}}
+  {{- $probesEnabled := ternary $probes.enabled (not $isJobOrCronJob) (hasKey $probes "enabled") -}}
+  {{- if $probesEnabled }}
+    {{- $probesCopy := merge (deepCopy $probes) (dict "healthcheckPath" $app.quickConfigs.healthcheckPath) }}
+{{ include "poly.v3.container.probes" $probesCopy }}
+  {{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/* Container command & args */}}
+{{- define "poly.v3.container.cmd" -}}
+{{- $app := $.currentApp -}}
+{{- $cmd := ternary $app.vault.runContainer $app $app.vault.enabled -}}
+{{- with $cmd.command }}
+command: {{- toYaml . | nindent 2 }}
+{{- end -}}
+{{- with $cmd.runtimeArgs }}
+args: {{- toYaml . | nindent 2 }}
+{{- end -}}
+{{- end -}}
+
+{{/* Container ports (supports map or "port:name:protocol") */}}
+{{- define "poly.v3.container.ports" -}}
+{{- $app := $.currentApp -}}
+{{- range $port := $app.ports | default (list $app.quickConfigs.port) }}
+{{- if kindIs "map" $port }}
+- containerPort: {{ $port.containerPort }}
+  name: {{ $port.name | default "http" }}
+  protocol: {{ $port.protocol | default "TCP" }}
+  {{- with $port.hostIP }}
+  hostIP: {{ . }}
+  {{- end }}
+  {{- with $port.hostPort }}
+  hostPort: {{ . }}
+  {{- end }}
+{{- else }}
+{{- $p := concat (without (splitList ":" ($port | toString)) "\"\"" "''") (list "" "") }}
+- containerPort: {{ first $p }}
+  name: {{ index $p 1 | default "http" }}
+  protocol: {{ index $p 2 | default "TCP" }}
+{{- end }}
+{{- end }}
+{{- end -}}
+
+{{/* Container env (supports "~cfm:", "~scr:", "~fr:", "~rfr:" shortcuts) */}}
+{{- define "poly.v3.container.env" -}}
+{{- range $key, $val := $.currentApp.env }}
+- name: {{ $key | quote }}
+{{- if not (hasPrefix "~" $val) }}
+  value: {{ $val | quote }}
+{{- else }}
+  {{- $p := splitList ":" ((trimPrefix "~" $val) | toString) }}
+  {{- $kind := first $p }}
+  valueFrom:
+  {{- if or (eq $kind "cfm") (eq $kind "scr") }}
+    {{ ternary "configMapKeyRef" "secretKeyRef" (eq $kind "cfm") }}:
+      key: {{ index $p 1 }}
+      name: {{ index $p 2 }}
+      optional: {{ eq (index $p 3) "true" }}
+  {{- else if eq $kind "fr" }}
+    fieldRef:
+      fieldPath: {{ index $p 1 }}
+      apiVersion: {{ index $p 2 }}
+  {{- else }}
+    resourceFieldRef:
+      resource: {{ index $p 1 }}
+      containerName: {{ index $p 2 }}
+      divisor: {{ index $p 3 }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end -}}
+
+{{/* Container envFrom (supports map or "cfm|scr:name:optional:prefix") */}}
+{{- define "poly.v3.container.envFrom" -}}
+{{- range $val := $.currentApp.envFrom }}
+{{- $refType := "" -}}
+{{- $name := "" -}}
+{{- $optional := false -}}
+{{- $prefix := "" -}}
+{{- if kindIs "string" $val }}
+  {{- $p := concat (without (splitList ":" $val) "\"\"" "''") (list "") }}
+  {{- $refType = ternary "configMapRef" "secretRef" (eq (first $p) "cfm") }}
+  {{- $name = index $p 1 }}
+  {{- $optional = index $p 2 }}
+  {{- $prefix = index $p 3 }}
+{{- else }}
+  {{- $refType = ternary "configMapRef" "secretRef" (hasKey $val "configMapRef") }}
+  {{- $ref := get $val $refType }}
+  {{- $name = $ref.name }}
+  {{- $optional = $ref.optional }}
+  {{- $prefix = $val.prefix }}
+{{- end }}
+- {{ $refType }}:
+    name: {{ include "poly.v3.prefixName" (dict "Release" $.Release "prefixName" $name) }}
+    optional: {{ $optional }}
+  {{- with $prefix }}
+  prefix: {{ . }}
+  {{- end }}
+{{- end }}
+{{- end -}}

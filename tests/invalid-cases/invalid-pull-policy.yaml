@@ -1,0 +1,6 @@
+app:
+  enabled: true
+  image:
+    repository: myregistry.com/demo
+    tag: "v1.0.0"
+    pullPolicy: AlwaysPull

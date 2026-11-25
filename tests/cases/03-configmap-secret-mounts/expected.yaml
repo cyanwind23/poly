@@ -1,0 +1,684 @@
+---
+# Source: poly/templates/main.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-release-app-config
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-cm-created-file
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+data:
+  config.yaml: |-
+    port: 8080
+    env: prod
+---
+# Source: poly/templates/main.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-release-combined-cm
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-combined-mounts
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+data:
+  APP_ENV: staging
+---
+# Source: poly/templates/main.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-release-env-only-cm
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-no-mounts
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+data:
+  LOG_LEVEL: info
+---
+# Source: poly/templates/main.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: data-pvc
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-combined-mounts
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  accessModes: 
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+# Source: poly/templates/main.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-release-app-cm-created-file
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-cm-created-file
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app-cm-created-file
+      app.kubernetes.io/instance: test-release
+  template:
+    metadata:
+      name: test-release-app-cm-created-file
+      labels:
+        helm.sh/chart: poly-3.1.0
+        app.kubernetes.io/name: app-cm-created-file
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      containers:
+        - image: myregistry.com/demo:v1.0.0
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - sleep
+                - "3"
+          name: app-cm-created-file
+          ports:
+          - containerPort: 80
+            name: http
+            protocol: TCP
+          resources: {}
+          volumeMounts:
+          - mountPath: /etc/app/config
+            name: cm-app-config
+            readOnly: true
+      imagePullSecrets: 
+        []
+      volumes:
+      - name: cm-app-config
+        configMap:
+          name: test-release-app-config
+      affinity: {}
+      nodeSelector: {}
+      tolerations: []
+      restartPolicy: Always
+      serviceAccountName: default
+      automountServiceAccountToken: true
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 0
+---
+# Source: poly/templates/main.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-release-app-cm-existing-options
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-cm-existing-options
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app-cm-existing-options
+      app.kubernetes.io/instance: test-release
+  template:
+    metadata:
+      name: test-release-app-cm-existing-options
+      labels:
+        helm.sh/chart: poly-3.1.0
+        app.kubernetes.io/name: app-cm-existing-options
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      containers:
+        - image: myregistry.com/demo:v1.0.0
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - sleep
+                - "3"
+          name: app-cm-existing-options
+          ports:
+          - containerPort: 80
+            name: http
+            protocol: TCP
+          resources: {}
+          volumeMounts:
+          - mountPath: /etc/app/settings.json
+            name: cm-external-cm
+            readOnly: true
+            subPath: settings.json
+      imagePullSecrets: 
+        []
+      volumes:
+      - name: cm-external-cm
+        configMap:
+          name: external-cm
+          items:
+            - key: raw-settings
+              path: settings.json
+          defaultMode: 420
+          optional: true
+      affinity: {}
+      nodeSelector: {}
+      tolerations: []
+      restartPolicy: Always
+      serviceAccountName: default
+      automountServiceAccountToken: true
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 0
+---
+# Source: poly/templates/main.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-release-app-cm-prefix-name
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-cm-prefix-name
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app-cm-prefix-name
+      app.kubernetes.io/instance: test-release
+  template:
+    metadata:
+      name: test-release-app-cm-prefix-name
+      labels:
+        helm.sh/chart: poly-3.1.0
+        app.kubernetes.io/name: app-cm-prefix-name
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      containers:
+        - image: myregistry.com/demo:v1.0.0
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - sleep
+                - "3"
+          name: app-cm-prefix-name
+          ports:
+          - containerPort: 80
+            name: http
+            protocol: TCP
+          resources: {}
+          volumeMounts:
+          - mountPath: /etc/shared
+            name: cm-shared-cm
+            readOnly: true
+      imagePullSecrets: 
+        []
+      volumes:
+      - name: cm-shared-cm
+        configMap:
+          name: test-release-shared-cm
+      affinity: {}
+      nodeSelector: {}
+      tolerations: []
+      restartPolicy: Always
+      serviceAccountName: default
+      automountServiceAccountToken: true
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 0
+---
+# Source: poly/templates/main.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-release-app-combined-mounts
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-combined-mounts
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app-combined-mounts
+      app.kubernetes.io/instance: test-release
+  template:
+    metadata:
+      name: test-release-app-combined-mounts
+      labels:
+        helm.sh/chart: poly-3.1.0
+        app.kubernetes.io/name: app-combined-mounts
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      containers:
+        - image: myregistry.com/demo:v1.0.0
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - sleep
+                - "3"
+          name: app-combined-mounts
+          ports:
+          - containerPort: 80
+            name: http
+            protocol: TCP
+          resources: {}
+          volumeMounts:
+          - mountPath: /tmp/scratch
+            name: scratch-vol
+            readOnly: false
+          - mountPath: /var/lib/data
+            name: data-pvc
+          - mountPath: /etc/combined/cm
+            name: cm-combined-cm
+            readOnly: true
+          - mountPath: /etc/combined/existing-cm
+            name: cm-shared-existing-cm
+            readOnly: true
+          - mountPath: /etc/combined/secret
+            name: secret-combined-es-secret
+            readOnly: false
+          - mountPath: /etc/combined/ca
+            name: secret-existing-ca-secret
+            readOnly: true
+      imagePullSecrets: 
+        []
+      volumes:
+      - emptyDir: {}
+        name: scratch-vol
+      - name: data-pvc
+        persistentVolumeClaim:
+          claimName: data-pvc
+      - name: cm-combined-cm
+        configMap:
+          name: test-release-combined-cm
+      - name: cm-shared-existing-cm
+        configMap:
+          name: shared-existing-cm
+      - name: secret-combined-es-secret
+        secret:
+          secretName: test-release-combined-es-secret
+      - name: secret-existing-ca-secret
+        secret:
+          secretName: existing-ca-secret
+      affinity: {}
+      nodeSelector: {}
+      tolerations: []
+      restartPolicy: Always
+      serviceAccountName: default
+      automountServiceAccountToken: true
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 0
+---
+# Source: poly/templates/main.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-release-app-external-secret-mount
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-external-secret-mount
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app-external-secret-mount
+      app.kubernetes.io/instance: test-release
+  template:
+    metadata:
+      name: test-release-app-external-secret-mount
+      labels:
+        helm.sh/chart: poly-3.1.0
+        app.kubernetes.io/name: app-external-secret-mount
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      containers:
+        - image: myregistry.com/demo:v1.0.0
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - sleep
+                - "3"
+          name: app-external-secret-mount
+          ports:
+          - containerPort: 80
+            name: http
+            protocol: TCP
+          resources: {}
+          volumeMounts:
+          - mountPath: /etc/db/password
+            name: secret-db-creds
+            readOnly: true
+            subPath: password
+      imagePullSecrets: 
+        []
+      volumes:
+      - name: secret-db-creds
+        secret:
+          secretName: test-release-db-creds
+          items:
+            - key: db-pass
+              path: password
+      affinity: {}
+      nodeSelector: {}
+      tolerations: []
+      restartPolicy: Always
+      serviceAccountName: default
+      automountServiceAccountToken: true
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 0
+---
+# Source: poly/templates/main.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-release-app-no-mounts
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-no-mounts
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app-no-mounts
+      app.kubernetes.io/instance: test-release
+  template:
+    metadata:
+      name: test-release-app-no-mounts
+      labels:
+        helm.sh/chart: poly-3.1.0
+        app.kubernetes.io/name: app-no-mounts
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      containers:
+        - image: myregistry.com/demo:v1.0.0
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - sleep
+                - "3"
+          name: app-no-mounts
+          ports:
+          - containerPort: 80
+            name: http
+            protocol: TCP
+          resources: {}
+      imagePullSecrets: 
+        []
+      affinity: {}
+      nodeSelector: {}
+      tolerations: []
+      restartPolicy: Always
+      serviceAccountName: default
+      automountServiceAccountToken: true
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 0
+---
+# Source: poly/templates/main.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-release-app-secret-existing
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-secret-existing
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app-secret-existing
+      app.kubernetes.io/instance: test-release
+  template:
+    metadata:
+      name: test-release-app-secret-existing
+      labels:
+        helm.sh/chart: poly-3.1.0
+        app.kubernetes.io/name: app-secret-existing
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      containers:
+        - image: myregistry.com/demo:v1.0.0
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - sleep
+                - "3"
+          name: app-secret-existing
+          ports:
+          - containerPort: 80
+            name: http
+            protocol: TCP
+          resources: {}
+          volumeMounts:
+          - mountPath: /etc/tls
+            name: secret-tls-secret
+            readOnly: true
+          - mountPath: /etc/shared-tls
+            name: secret-shared-tls
+            readOnly: true
+      imagePullSecrets: 
+        []
+      volumes:
+      - name: secret-tls-secret
+        secret:
+          secretName: tls-secret
+          defaultMode: 256
+      - name: secret-shared-tls
+        secret:
+          secretName: test-release-shared-tls
+      affinity: {}
+      nodeSelector: {}
+      tolerations: []
+      restartPolicy: Always
+      serviceAccountName: default
+      automountServiceAccountToken: true
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 0
+---
+# Source: poly/templates/main.yaml
+apiVersion: external-secrets.io/v1
+kind: ClusterSecretStore
+metadata:
+  name: aws-cluster-store
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: shared-secret-stores
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  conditions:
+    - namespaces:
+      - production
+  provider:
+    aws:
+      region: ap-southeast-1
+      service: SecretsManager
+
+
+---
+# Source: poly/templates/main.yaml
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: test-release-combined-es-secret
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-combined-mounts
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: vault-backend
+  target:
+    name: test-release-combined-es-secret
+  data:
+    - remoteRef:
+        key: secret/data/combined
+        property: api_key
+      secretKey: API_KEY
+---
+# Source: poly/templates/main.yaml
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: test-release-db-creds
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-external-secret-mount
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  refreshPolicy: OnChange
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: vault-backend
+  target:
+    creationPolicy: Owner
+    name: test-release-db-creds
+  data:
+    - remoteRef:
+        key: secret/data/db
+        property: password
+      secretKey: db-pass
+---
+# Source: poly/templates/main.yaml
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: test-release-env-only-es
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-no-mounts
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  refreshInterval: 30m
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: vault-backend
+  target:
+    name: test-release-env-only-es
+  dataFrom:
+    - extract:
+        key: secret/data/env-only
+---
+# Source: poly/templates/main.yaml
+apiVersion: external-secrets.io/v1
+kind: SecretStore
+metadata:
+  name: test-release-vault-store
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: shared-secret-stores
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    app.example.com/managed-by: "test-release"
+spec:
+  controller: "eso-main"
+  retrySettings:
+    maxRetries: 5
+    retryInterval: 10s
+  provider:
+    vault:
+      auth:
+        kubernetes:
+          mountPath: kubernetes
+          role: demo-role
+          serviceAccountRef:
+            name: default
+      path: secret
+      server: https://vault.example.com
+      version: v2

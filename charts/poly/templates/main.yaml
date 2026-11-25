@@ -19,22 +19,29 @@
 {{- end }}
 
 {{- /* Service resources */}}
+{{- $isJobOrCronJob := mustHas $.currentApp.deployType (list "Job" "CronJob") -}}
+{{- $svcExplicitlyEnabled := and (hasKey $appConfig "service") $appConfig.service.enabled -}}
+{{- if or (not $isJobOrCronJob) $svcExplicitlyEnabled -}}
 {{- $_ := set $.currentApp "currentSvc" $.currentApp.service -}}
 {{- include "poly.v3.service" $ -}}
 {{- range $svc := $.currentApp.service.extraServices }}
 {{- $_ := set $.currentApp "currentSvc" $svc -}}
 {{- include "poly.v3.service" $ -}}
 {{ end -}}
+{{- end -}}
 
 {{- /* SA resources */}}
 {{- include "poly.v3.sa" $ -}}
 
 {{- /* Ingress resources */}}
+{{- $ingExplicitlyEnabled := and (hasKey $appConfig "ingress") $appConfig.ingress.enabled -}}
+{{- if or (not $isJobOrCronJob) $ingExplicitlyEnabled -}}
 {{- $_ := set $.currentApp "currentIngress" $.currentApp.ingress -}}
 {{- include "poly.v3.ingress" $ -}}
 {{- range $ing := $.currentApp.ingress.extraIngresses }}
 {{- $_ := set $.currentApp "currentIngress" $ing -}}
 {{- include "poly.v3.ingress" $ -}}
+{{- end -}}
 {{- end -}}
 
 {{- /* ConfigMap resources */}}
@@ -42,6 +49,10 @@
 {{- if eq $.currentApp.vault.template.type "configmap" -}}
 {{- include "poly.v3.vault.configmap" $ -}}
 {{- end -}}
+
+{{- /* External Secrets Operator resources */}}
+{{- include "poly.v3.secretStore" $ -}}
+{{- include "poly.v3.externalSecret" $ -}}
 
 {{- /* PVC resources */}}
 {{- include "poly.v3.pvc" $ }}
@@ -54,6 +65,13 @@
 
 {{- /* Rollout resources */}}
 {{- include "poly.v3.rollout" $ }}
+
+{{- /* Gateway API resources */}}
+{{- include "poly.v3.httproute" $ -}}
+{{- include "poly.v3.grpcroute" $ -}}
+
+{{- /* Cilium resources */}}
+{{- include "poly.v3.cilium" $ -}}
 
 {{- /* Rollout dynamic configmap */}}
 {{- end -}}

@@ -1,0 +1,136 @@
+default:
+  disableProbes: ["all"]
+  image:
+    repository: myregistry.com/demo
+    tag: "v1.0.0"
+
+# App 1: HTTPRoute with smart default backendRefs + quickConfigs.domain + default / rule
+appHttpDefault:
+  enabled: true
+  quickConfigs:
+    domain: "app1.example.com"
+  service:
+    ports:
+      - "8080:8080:TCP:http"
+  gatewayApi:
+    httpRoute:
+      enabled: true
+      parentRefs:
+        - name: main-gateway
+          namespace: infra
+
+# App 2: HTTPRoute with custom rules (matches, filters, custom backendRefs) + extraRoutes
+appHttpCustom:
+  enabled: true
+  service:
+    ports:
+      - "80"
+  gatewayApi:
+    httpRoute:
+      enabled: true
+      name: -custom-http
+      annotations:
+        external-dns.alpha.kubernetes.io/ttl: "60"
+      parentRefs:
+        - name: main-gateway
+          namespace: infra
+          sectionName: https
+      hostnames:
+        - api.example.com
+      rules:
+        - matches:
+            - path:
+                type: PathPrefix
+                value: /api/v1
+          filters:
+            - type: RequestHeaderModifier
+              requestHeaderModifier:
+                set:
+                  - name: X-Env
+                    value: prod
+        - matches:
+            - path:
+                type: Exact
+                value: /health
+          backendRefs:
+            - name: custom-health-svc
+              port: 9090
+      extraRoutes:
+        - enabled: true
+          name: explicit-extra-route
+          parentRefs:
+            - name: internal-gateway
+              namespace: infra
+          hostnames:
+            - internal.example.com
+          rules:
+            - matches:
+                - path:
+                    type: PathPrefix
+                    value: /internal
+        - enabled: false
+          name: disabled-extra-route
+
+# App 3: GRPCRoute with parentRefs + hostnames + rules
+appGrpc:
+  enabled: true
+  service:
+    ports:
+      - "50051:50051:TCP:grpc"
+  gatewayApi:
+    grpcRoute:
+      enabled: true
+      parentRefs:
+        - name: grpc-gateway
+          namespace: infra
+      hostnames:
+        - grpc.example.com
+      rules:
+        - matches:
+            - method:
+                service: helloworld.Greeter
+                method: SayHello
+
+# App 4: CiliumNetworkPolicy (auto endpointSelector + ingress & egress) + CiliumEnvoyConfig
+appCilium:
+  enabled: true
+  cilium:
+    networkPolicy:
+      enabled: true
+      description: "Allow ingress from web and egress to DNS"
+      annotations:
+        policy.cilium.io/owner: "platform"
+      ingress:
+        - fromEndpoints:
+            - matchLabels:
+                app: web
+          toPorts:
+            - ports:
+                - port: "8080"
+                  protocol: TCP
+      egress:
+        - toEndpoints:
+            - matchLabels:
+                k8s:io.kubernetes.pod.namespace: kube-system
+                k8s-app: kube-dns
+          toPorts:
+            - ports:
+                - port: "53"
+                  protocol: UDP
+    envoyConfig:
+      enabled: true
+      name: -envoy
+      services:
+        - name: test-release-app-cilium
+          listener: envoy-listener
+      backendServices:
+        - name: backend-svc
+          ports:
+            - "8080"
+      resources:
+        - "@type": type.googleapis.com/envoy.config.listener.v3.Listener
+          name: envoy-listener
+
+# App 5: Disabled by default (none emitted)
+appDisabled:
+  enabled: true

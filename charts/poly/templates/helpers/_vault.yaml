@@ -27,5 +27,5 @@ vault.hashicorp.com/agent-configmap: {{ include "poly.v3.vault.cfmName" $ }}
 
 {{- define "poly.v3.vault.cfmName" -}}
 {{- $name := $.currentApp.vault.template.name | replace "." "-" -}}
-{{- ternary (printf "%s%s" $.Release.Name $name) $name (hasPrefix "-" $name) -}}
+{{- include "poly.v3.prefixName" (dict "Release" $.Release "prefixName" $name) -}}
 {{- end -}}

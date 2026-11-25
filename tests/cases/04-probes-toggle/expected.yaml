@@ -1,0 +1,409 @@
+---
+# Source: poly/templates/main.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-release-app1-inherited-probes
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app1-inherited-probes
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app1-inherited-probes
+      app.kubernetes.io/instance: test-release
+  template:
+    metadata:
+      name: test-release-app1-inherited-probes
+      labels:
+        helm.sh/chart: poly-3.1.0
+        app.kubernetes.io/name: app1-inherited-probes
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      containers:
+        - image: myregistry.com/demo:v1.0.0
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - sleep
+                - "3"
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /live
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          name: app1-inherited-probes
+          ports:
+          - containerPort: 80
+            name: http
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /ready
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 3
+          resources: {}
+      imagePullSecrets: 
+        []
+      affinity: {}
+      nodeSelector: {}
+      tolerations: []
+      restartPolicy: Always
+      serviceAccountName: default
+      automountServiceAccountToken: true
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 0
+---
+# Source: poly/templates/main.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-release-app2-probes-disabled
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app2-probes-disabled
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app2-probes-disabled
+      app.kubernetes.io/instance: test-release
+  template:
+    metadata:
+      name: test-release-app2-probes-disabled
+      labels:
+        helm.sh/chart: poly-3.1.0
+        app.kubernetes.io/name: app2-probes-disabled
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      containers:
+        - image: myregistry.com/demo:v1.0.0
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - sleep
+                - "3"
+          name: app2-probes-disabled
+          ports:
+          - containerPort: 80
+            name: http
+            protocol: TCP
+          resources: {}
+      imagePullSecrets: 
+        []
+      affinity: {}
+      nodeSelector: {}
+      tolerations: []
+      restartPolicy: Always
+      serviceAccountName: default
+      automountServiceAccountToken: true
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 0
+---
+# Source: poly/templates/main.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-release-app3-readiness-disabled
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app3-readiness-disabled
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app3-readiness-disabled
+      app.kubernetes.io/instance: test-release
+  template:
+    metadata:
+      name: test-release-app3-readiness-disabled
+      labels:
+        helm.sh/chart: poly-3.1.0
+        app.kubernetes.io/name: app3-readiness-disabled
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      containers:
+        - image: myregistry.com/demo:v1.0.0
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - sleep
+                - "3"
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /live
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          name: app3-readiness-disabled
+          ports:
+          - containerPort: 80
+            name: http
+            protocol: TCP
+          resources: {}
+      imagePullSecrets: 
+        []
+      affinity: {}
+      nodeSelector: {}
+      tolerations: []
+      restartPolicy: Always
+      serviceAccountName: default
+      automountServiceAccountToken: true
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 0
+---
+# Source: poly/templates/main.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-release-app4-shorthand-probe
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app4-shorthand-probe
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app4-shorthand-probe
+      app.kubernetes.io/instance: test-release
+  template:
+    metadata:
+      name: test-release-app4-shorthand-probe
+      labels:
+        helm.sh/chart: poly-3.1.0
+        app.kubernetes.io/name: app4-shorthand-probe
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      containers:
+        - image: myregistry.com/demo:v1.0.0
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - sleep
+                - "3"
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthz
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          name: app4-shorthand-probe
+          ports:
+          - containerPort: 80
+            name: http
+            protocol: TCP
+          resources: {}
+      imagePullSecrets: 
+        []
+      affinity: {}
+      nodeSelector: {}
+      tolerations: []
+      restartPolicy: Always
+      serviceAccountName: default
+      automountServiceAccountToken: true
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 0
+---
+# Source: poly/templates/main.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-release-app6-probes-override
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app6-probes-override
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app6-probes-override
+      app.kubernetes.io/instance: test-release
+  template:
+    metadata:
+      name: test-release-app6-probes-override
+      labels:
+        helm.sh/chart: poly-3.1.0
+        app.kubernetes.io/name: app6-probes-override
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      containers:
+        - image: myregistry.com/demo:v1.0.0
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - sleep
+                - "3"
+          livenessProbe:
+            exec:
+              command:
+              - cat
+              - /tmp/healthy
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          name: app6-probes-override
+          ports:
+          - containerPort: 80
+            name: http
+            protocol: TCP
+          resources: {}
+      imagePullSecrets: 
+        []
+      affinity: {}
+      nodeSelector: {}
+      tolerations: []
+      restartPolicy: Always
+      serviceAccountName: default
+      automountServiceAccountToken: true
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 0
+
+
+
+---
+# Source: poly/templates/main.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: test-release-app5-job-probes-enabled
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app5-job-probes-enabled
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  template:
+    metadata:
+      name: test-release-app5-job-probes-enabled
+      labels:
+        helm.sh/chart: poly-3.1.0
+        app.kubernetes.io/name: app5-job-probes-enabled
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      containers:
+        - command:
+          - /bin/sh
+          - -c
+          - run-job.sh
+          image: myregistry.com/demo:v1.0.0
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /live
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          name: app5-job-probes-enabled
+          ports:
+          - containerPort: 80
+            name: http
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /ready
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 3
+          resources: {}
+      imagePullSecrets: 
+        []
+      affinity: {}
+      nodeSelector: {}
+      tolerations: []
+      restartPolicy: OnFailure
+      serviceAccountName: default
+      automountServiceAccountToken: true
+  backoffLimit: 6
+  completionMode: NonIndexed
+  completions: 1
+  parallelism: 1
+  suspend: false

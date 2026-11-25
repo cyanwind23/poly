@@ -1,0 +1,505 @@
+---
+# Source: poly/templates/main.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: test-release-app-vault-sa
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-vault-sa
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:    
+    eks.amazonaws.com/role-arn: "arn:aws:iam::123456789012:role/demo-role"
+automountServiceAccountToken: true
+
+
+
+---
+# Source: poly/templates/main.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-release-app-env-networking
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-env-networking
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      name: http
+    - port: 9090
+      targetPort: 9090
+      protocol: TCP
+      name: metrics
+  selector:
+    app.kubernetes.io/name: app-env-networking
+    app.kubernetes.io/instance: test-release
+---
+# Source: poly/templates/main.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-release-app-env-networking-headless
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-env-networking
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  clusterIP: None
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: app-env-networking
+    app.kubernetes.io/instance: test-release
+---
+# Source: poly/templates/main.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-release-app-rollout-bg
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-rollout-bg
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: app-rollout-bg
+    app.kubernetes.io/instance: test-release
+---
+# Source: poly/templates/main.yaml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rollout-svc-preview
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-rollout-bg
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: app-rollout-bg
+    app.kubernetes.io/instance: test-release
+---
+# Source: poly/templates/main.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-release-app-env-networking
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-env-networking
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app-env-networking
+      app.kubernetes.io/instance: test-release
+  template:
+    metadata:
+      name: test-release-app-env-networking
+      labels:
+        helm.sh/chart: poly-3.1.0
+        app.kubernetes.io/name: app-env-networking
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      containers:
+        - env:
+          - name: CFG_ENV
+            valueFrom:
+              configMapKeyRef:
+                key: app-key
+                name: app-config
+                optional: true
+          - name: CPU_LIMIT
+            valueFrom:
+              resourceFieldRef:
+                containerName: app-env-networking
+                divisor: 1m
+                resource: limits.cpu
+          - name: PLAIN_ENV
+            value: production
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.name
+          - name: SCR_ENV
+            valueFrom:
+              secretKeyRef:
+                key: db-pass
+                name: app-secret
+                optional: false
+          envFrom:
+          - configMapRef:
+              name: test-release-app-cfg
+              optional: true
+          - secretRef:
+              name: ext-secret
+              optional: false
+          image: myregistry.com/demo:v1.0.0
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - sleep
+                - "3"
+          name: app-env-networking
+          ports:
+          - containerPort: 8080
+            name: http
+            protocol: TCP
+          - containerPort: 9090
+            name: metrics
+            protocol: TCP
+          resources: {}
+      imagePullSecrets: 
+        []
+      affinity: {}
+      nodeSelector: {}
+      tolerations: []
+      restartPolicy: Always
+      serviceAccountName: default
+      automountServiceAccountToken: true
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 0
+---
+# Source: poly/templates/main.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-release-app-rollout-bg
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-rollout-bg
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app-rollout-bg
+      app.kubernetes.io/instance: test-release
+  template:
+    metadata:
+      name: test-release-app-rollout-bg
+      labels:
+        helm.sh/chart: poly-3.1.0
+        app.kubernetes.io/name: app-rollout-bg
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      containers:
+        - image: myregistry.com/demo:v1.0.0
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - sleep
+                - "3"
+          name: app-rollout-bg
+          ports:
+          - containerPort: 80
+            name: http
+            protocol: TCP
+          resources: {}
+      imagePullSecrets: 
+        []
+      affinity: {}
+      nodeSelector: {}
+      tolerations: []
+      restartPolicy: Always
+      serviceAccountName: default
+      automountServiceAccountToken: true
+  replicas: 0
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 0
+---
+# Source: poly/templates/main.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-release-app-vault-sa
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-vault-sa
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app-vault-sa
+      app.kubernetes.io/instance: test-release
+  template:
+    metadata:
+      name: test-release-app-vault-sa
+      labels:
+        helm.sh/chart: poly-3.1.0
+        app.kubernetes.io/name: app-vault-sa
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/managed-by: Helm
+      annotations:
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/agent-inject-secret-config.env: secret/data/demo
+        vault.hashicorp.com/agent-inject-template-config.env: |-
+          {{- with secret "secret/data/demo" -}}
+          DB_PASS="{{ .Data.data.password }}"
+          {{- end -}}
+        vault.hashicorp.com/agent-pre-populate-only: "true"
+        vault.hashicorp.com/auth-path: auth/kubernetes
+        vault.hashicorp.com/role: demo-role
+        vault.hashicorp.com/service: https://vault.example.com
+    spec:
+      containers:
+        - args:
+          - . /vault/secrets/config.env && exec /app/server
+          command:
+          - /bin/sh
+          - -c
+          image: myregistry.com/demo:v1.0.0
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - sleep
+                - "3"
+          name: app-vault-sa
+          ports:
+          - containerPort: 80
+            name: http
+            protocol: TCP
+          resources: {}
+      imagePullSecrets: 
+        []
+      affinity: {}
+      nodeSelector: {}
+      tolerations: []
+      restartPolicy: Always
+      serviceAccountName: test-release-app-vault-sa
+      automountServiceAccountToken: true
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 0
+---
+# Source: poly/templates/main.yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: test-release-app-env-networking
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-env-networking
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  minReplicas: 2
+  maxReplicas: 6
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: test-release-app-env-networking
+  behavior:
+    scaleDown:
+      selectPolicy: Max
+      stabilizationWindowSeconds: 300
+    scaleUp:
+      selectPolicy: Max
+      stabilizationWindowSeconds: 60
+  metrics:
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 75
+---
+# Source: poly/templates/main.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app.example.com
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-env-networking
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:    
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+      - app.example.com
+      secretName: app-tls
+  rules:
+  - host: app.example.com
+    http:
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: test-release-app-env-networking
+              port:
+                number: 80
+        - path: /metrics
+          pathType: Exact
+          backend:
+            service:
+              name: test-release-app-env-networking
+              port:
+                number: 9090
+---
+# Source: poly/templates/main.yaml
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rollout.example.com-preview
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-rollout-bg
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:    
+    nginx.ingress.kubernetes.io/configuration-snippet: "rewrite \"(?i)/preview(/|$)(.*)\" /$2 break;\n"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+      - rollout.example.com
+      secretName: rollout-preview-tls
+  rules:
+  - host: rollout.example.com
+    http:
+      paths:
+        - path: /preview/
+          pathType: Prefix
+          backend:
+            service:
+              name: rollout-svc-preview
+              port:
+                number: 80
+---
+# Source: poly/templates/main.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: test-release-app-rollout-bg
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-rollout-bg
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app-rollout-bg
+      app.kubernetes.io/instance: test-release
+  workloadRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: test-release-app-rollout-bg
+  strategy:
+    blueGreen:
+      activeService: test-release-app-rollout-bg
+      previewService: rollout-svc-preview
+      abortScaleDownDelaySeconds: 30
+      autoPromotionEnabled: false
+      autoPromotionSeconds: 30
+      previewReplicaCount: 1
+      scaleDownDelayRevisionLimit: 2
+      scaleDownDelaySeconds: 30
+  analysis:
+    successfulRunHistoryLimit: 5
+    unsuccessfulRunHistoryLimit: 5
+  minReadySeconds: 30
+  pause: true
+  progressDeadlineAbort: false
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 3
+---
+# Source: poly/templates/main.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: test-release-app-env-networking
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-env-networking
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  endpoints: 
+    - interval: 15s
+      path: /metrics
+      port: metrics
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app-env-networking
+      app.kubernetes.io/instance: test-release

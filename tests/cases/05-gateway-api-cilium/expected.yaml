@@ -1,0 +1,602 @@
+---
+# Source: poly/templates/main.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-release-app-cilium
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-cilium
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: app-cilium
+    app.kubernetes.io/instance: test-release
+---
+# Source: poly/templates/main.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-release-app-disabled
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-disabled
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: app-disabled
+    app.kubernetes.io/instance: test-release
+---
+# Source: poly/templates/main.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-release-app-grpc
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-grpc
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 50051
+      targetPort: 50051
+      protocol: TCP
+      name: grpc
+  selector:
+    app.kubernetes.io/name: app-grpc
+    app.kubernetes.io/instance: test-release
+---
+# Source: poly/templates/main.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-release-app-http-custom
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-http-custom
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: app-http-custom
+    app.kubernetes.io/instance: test-release
+---
+# Source: poly/templates/main.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-release-app-http-default
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-http-default
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: app-http-default
+    app.kubernetes.io/instance: test-release
+---
+# Source: poly/templates/main.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-release-app-cilium
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-cilium
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app-cilium
+      app.kubernetes.io/instance: test-release
+  template:
+    metadata:
+      name: test-release-app-cilium
+      labels:
+        helm.sh/chart: poly-3.1.0
+        app.kubernetes.io/name: app-cilium
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      containers:
+        - image: myregistry.com/demo:v1.0.0
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - sleep
+                - "3"
+          name: app-cilium
+          ports:
+          - containerPort: 80
+            name: http
+            protocol: TCP
+          resources: {}
+      imagePullSecrets: 
+        []
+      affinity: {}
+      nodeSelector: {}
+      tolerations: []
+      restartPolicy: Always
+      serviceAccountName: default
+      automountServiceAccountToken: true
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 0
+---
+# Source: poly/templates/main.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-release-app-disabled
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-disabled
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app-disabled
+      app.kubernetes.io/instance: test-release
+  template:
+    metadata:
+      name: test-release-app-disabled
+      labels:
+        helm.sh/chart: poly-3.1.0
+        app.kubernetes.io/name: app-disabled
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      containers:
+        - image: myregistry.com/demo:v1.0.0
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - sleep
+                - "3"
+          name: app-disabled
+          ports:
+          - containerPort: 80
+            name: http
+            protocol: TCP
+          resources: {}
+      imagePullSecrets: 
+        []
+      affinity: {}
+      nodeSelector: {}
+      tolerations: []
+      restartPolicy: Always
+      serviceAccountName: default
+      automountServiceAccountToken: true
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 0
+---
+# Source: poly/templates/main.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-release-app-grpc
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-grpc
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app-grpc
+      app.kubernetes.io/instance: test-release
+  template:
+    metadata:
+      name: test-release-app-grpc
+      labels:
+        helm.sh/chart: poly-3.1.0
+        app.kubernetes.io/name: app-grpc
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      containers:
+        - image: myregistry.com/demo:v1.0.0
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - sleep
+                - "3"
+          name: app-grpc
+          ports:
+          - containerPort: 80
+            name: http
+            protocol: TCP
+          resources: {}
+      imagePullSecrets: 
+        []
+      affinity: {}
+      nodeSelector: {}
+      tolerations: []
+      restartPolicy: Always
+      serviceAccountName: default
+      automountServiceAccountToken: true
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 0
+---
+# Source: poly/templates/main.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-release-app-http-custom
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-http-custom
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app-http-custom
+      app.kubernetes.io/instance: test-release
+  template:
+    metadata:
+      name: test-release-app-http-custom
+      labels:
+        helm.sh/chart: poly-3.1.0
+        app.kubernetes.io/name: app-http-custom
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      containers:
+        - image: myregistry.com/demo:v1.0.0
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - sleep
+                - "3"
+          name: app-http-custom
+          ports:
+          - containerPort: 80
+            name: http
+            protocol: TCP
+          resources: {}
+      imagePullSecrets: 
+        []
+      affinity: {}
+      nodeSelector: {}
+      tolerations: []
+      restartPolicy: Always
+      serviceAccountName: default
+      automountServiceAccountToken: true
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 0
+---
+# Source: poly/templates/main.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-release-app-http-default
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-http-default
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app-http-default
+      app.kubernetes.io/instance: test-release
+  template:
+    metadata:
+      name: test-release-app-http-default
+      labels:
+        helm.sh/chart: poly-3.1.0
+        app.kubernetes.io/name: app-http-default
+        app.kubernetes.io/instance: test-release
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      containers:
+        - image: myregistry.com/demo:v1.0.0
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - sleep
+                - "3"
+          name: app-http-default
+          ports:
+          - containerPort: 80
+            name: http
+            protocol: TCP
+          resources: {}
+      imagePullSecrets: 
+        []
+      affinity: {}
+      nodeSelector: {}
+      tolerations: []
+      restartPolicy: Always
+      serviceAccountName: default
+      automountServiceAccountToken: true
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 0
+---
+# Source: poly/templates/main.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app1.example.com
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-http-default
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: app1.example.com
+    http:
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: test-release-app-http-default
+              port:
+                number: 8080
+---
+# Source: poly/templates/main.yaml
+apiVersion: cilium.io/v2
+kind: CiliumEnvoyConfig
+metadata:
+  name: test-release-envoy
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-cilium
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  services:
+    - listener: envoy-listener
+      name: test-release-app-cilium
+  backendServices:
+    - name: backend-svc
+      ports:
+      - "8080"
+  resources:
+    - '@type': type.googleapis.com/envoy.config.listener.v3.Listener
+      name: envoy-listener
+---
+# Source: poly/templates/main.yaml
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: test-release-app-cilium
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-cilium
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    policy.cilium.io/owner: "platform"
+spec:
+  description: "Allow ingress from web and egress to DNS"
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: app-cilium
+      app.kubernetes.io/instance: test-release
+  ingress:
+    - fromEndpoints:
+      - matchLabels:
+          app: web
+      toPorts:
+      - ports:
+        - port: "8080"
+          protocol: TCP
+  egress:
+    - toEndpoints:
+      - matchLabels:
+          k8s-app: kube-dns
+          k8s:io.kubernetes.pod.namespace: kube-system
+      toPorts:
+      - ports:
+        - port: "53"
+          protocol: UDP
+---
+# Source: poly/templates/main.yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: GRPCRoute
+metadata:
+  name: test-release-app-grpc
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-grpc
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  parentRefs:
+    - name: grpc-gateway
+      namespace: infra
+  hostnames:
+    - grpc.example.com
+  rules:
+    - backendRefs:
+      - name: test-release-app-grpc
+        port: 50051
+      matches:
+      - method:
+          method: SayHello
+          service: helloworld.Greeter
+---
+# Source: poly/templates/main.yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: test-release-custom-http
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-http-custom
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    external-dns.alpha.kubernetes.io/ttl: "60"
+spec:
+  parentRefs:
+    - name: main-gateway
+      namespace: infra
+      sectionName: https
+  hostnames:
+    - api.example.com
+  rules:
+    - backendRefs:
+      - name: test-release-app-http-custom
+        port: 80
+      filters:
+      - requestHeaderModifier:
+          set:
+          - name: X-Env
+            value: prod
+        type: RequestHeaderModifier
+      matches:
+      - path:
+          type: PathPrefix
+          value: /api/v1
+    - backendRefs:
+      - name: custom-health-svc
+        port: 9090
+      matches:
+      - path:
+          type: Exact
+          value: /health
+---
+# Source: poly/templates/main.yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: explicit-extra-route
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-http-custom
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  parentRefs:
+    - name: internal-gateway
+      namespace: infra
+  hostnames:
+    - internal.example.com
+  rules:
+    - backendRefs:
+      - name: test-release-app-http-custom
+        port: 80
+      matches:
+      - path:
+          type: PathPrefix
+          value: /internal
+---
+# Source: poly/templates/main.yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: test-release-app-http-default
+  labels:
+    helm.sh/chart: poly-3.1.0
+    app.kubernetes.io/name: app-http-default
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  parentRefs:
+    - name: main-gateway
+      namespace: infra
+  hostnames:
+    - app1.example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: test-release-app-http-default
+          port: 8080
