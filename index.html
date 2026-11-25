@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Poly Helm Chart — Multi-App Kubernetes Subchart</title>
+  <meta name="description" content="Poly is a multi-app Kubernetes Helm subchart supporting Deployment, StatefulSet, DaemonSet, Job, CronJob, Gateway API, Cilium, Argo Rollouts, External Secrets &amp; Vault." />
+  <style>
+    :root {
+      --bg: #0b1020;
+      --surface: #121a2f;
+      --surface-2: #18223d;
+      --border: #253358;
+      --text: #e6ecf8;
+      --muted: #98a6c7;
+      --accent: #38bdf8;
+      --accent-2: #818cf8;
+      --green: #34d399;
+      --code-bg: #090d1a;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+      background: radial-gradient(1200px 500px at 50% -10%, rgba(56, 189, 248, 0.14), transparent), var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 1040px; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .brand { display: flex; align-items: center; gap: 0.75rem; }
+    .logo {
+      width: 42px; height: 42px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      display: grid; place-items: center; font-weight: 800; color: #08101f; font-size: 1.2rem;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      background: rgba(52, 211, 153, 0.14);
+      color: var(--green);
+      border: 1px solid rgba(52, 211, 153, 0.35);
+    }
+    nav { display: flex; flex-wrap: wrap; gap: 1rem; font-size: 0.92rem; }
+    .hero { padding: 2.5rem 0 2rem; }
+    .hero h1 { font-size: clamp(1.9rem, 4vw, 2.75rem); line-height: 1.2; margin: 0 0 0.75rem; }
+    .hero p { color: var(--muted); max-width: 720px; font-size: 1.05rem; margin: 0 0 1.5rem; }
+    .actions { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      padding: 0.65rem 1.15rem; border-radius: 9px; font-weight: 600; font-size: 0.92rem;
+      border: 1px solid var(--border); background: var(--surface); color: var(--text);
+    }
+    .btn.primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #08101f; border: none;
+    }
+    .btn:hover { opacity: 0.92; text-decoration: none; }
+    h2 { font-size: 1.35rem; margin: 2.25rem 0 0.9rem; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem 1.2rem;
+    }
+    .card h3 { margin: 0 0 0.4rem; font-size: 1rem; color: var(--accent); }
+    .card p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+    .code-wrap {
+      position: relative;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+    .code-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.5rem 0.9rem; background: var(--surface-2);
+      border-bottom: 1px solid var(--border); font-size: 0.8rem; color: var(--muted);
+    }
+    .copy-btn {
+      background: transparent; color: var(--accent); border: 1px solid var(--border);
+      border-radius: 6px; padding: 0.2rem 0.55rem; font-size: 0.76rem; cursor: pointer;
+    }
+    .copy-btn:hover { background: rgba(56, 189, 248, 0.1); }
+    pre {
+      margin: 0; padding: 1rem; overflow-x: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.86rem; line-height: 1.55; color: #dbeafe;
+    }
+    .releases { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
+    .releases th, .releases td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.92rem; }
+    .releases th { background: var(--surface-2); color: var(--muted); font-weight: 600; }
+    .releases tr:last-child td { border-bottom: none; }
+    footer {
+      margin-top: 3rem; padding-top: 1.25rem; border-top: 1px solid var(--border);
+      color: var(--muted); font-size: 0.85rem; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <div class="logo">P</div>
+        <div>
+          <strong>Poly Helm Chart</strong><br />
+          <span style="font-size: 0.82rem; color: var(--muted);">cyanwind23/poly</span>
+        </div>
+        <span class="badge">v3.1.0</span>
+      </div>
+      <nav>
+        <a href="https://github.com/cyanwind23/poly">GitHub</a>
+        <a href="https://github.com/cyanwind23/poly/blob/main/README.md">Documentation</a>
+        <a href="https://github.com/cyanwind23/poly/blob/main/CHANGELOG.md">Changelog</a>
+        <a href="https://github.com/cyanwind23/poly/releases">Releases</a>
+        <a href="./index.yaml">index.yaml</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <h1>Deploy Multi-App Kubernetes Stacks With One Clean <code>values.yaml</code></h1>
+      <p>
+        <strong>Poly</strong> is a Kubernetes Helm library/subchart with smart inheritance (<code>default</code> &rarr; <code>&lt;appName&gt;</code>),
+        concise shortcuts, schema validation, and cloud-native integrations for GitOps teams.
+      </p>
+      <div class="actions">
+        <a class="btn primary" href="https://github.com/cyanwind23/poly/blob/main/README.md">Read Full Docs</a>
+        <a class="btn" href="https://github.com/cyanwind23/poly/releases/tag/poly-3.1.0">Release v3.1.0</a>
+        <a class="btn" href="./index.yaml">Helm Repo Index</a>
+      </div>
+    </section>
+
+    <h2>Quick Start</h2>
+    <div class="code-wrap">
+      <div class="code-header">
+        <span>Add Helm Repository</span>
+        <button class="copy-btn" onclick="copyCode('cmd-repo', this)">Copy</button>
+      </div>
+      <pre id="cmd-repo">helm repo add poly https://cyanwind23.github.io/poly/
+helm repo update
+helm search repo poly</pre>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-header">
+        <span>Chart.yaml (Use as Subchart Dependency)</span>
+        <button class="copy-btn" onclick="copyCode('cmd-chart', this)">Copy</button>
+      </div>
+      <pre id="cmd-chart">apiVersion: v2
+name: my-stack
+type: application
+version: 1.0.0
+
+dependencies:
+  - name: poly
+    repository: https://cyanwind23.github.io/poly/
+    version: "3.1.0"</pre>
+    </div>
+
+    <h2>Key Capabilities in v3.1.0</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>Workloads &amp; Smart Defaults</h3>
+        <p>Supports <code>Deployment</code>, <code>StatefulSet</code>, <code>DaemonSet</code>, <code>Job</code>, and <code>CronJob</code> with automatic <code>OnFailure</code> and conditional probes/services.</p>
+      </div>
+      <div class="card">
+        <h3>External Secrets Operator (v1)</h3>
+        <p>First-class <code>ExternalSecret</code> &amp; <code>SecretStore</code> / <code>ClusterSecretStore</code> (<code>external-secrets.io/v1</code>). Raw inline Secrets in Git are blocked by schema.</p>
+      </div>
+      <div class="card">
+        <h3>Quick Volume Mounts</h3>
+        <p>Mount created or pre-existing (<code>exists: true</code>) <code>ConfigMap</code>, <code>Secret</code>, and <code>PVC</code> resources directly via <code>mountPath</code> and <code>-prefix</code> naming.</p>
+      </div>
+      <div class="card">
+        <h3>Gateway API &amp; Cilium</h3>
+        <p>Native <code>HTTPRoute</code> / <code>GRPCRoute</code> (<code>gateway.networking.k8s.io/v1</code>) plus <code>CiliumNetworkPolicy</code> and <code>CiliumEnvoyConfig</code> (<code>cilium.io/v2</code>).</p>
+      </div>
+      <div class="card">
+        <h3>ArgoCD &amp; Progressive Delivery</h3>
+        <p>Image tag precedence (<code>image.tag</code> &gt; <code>quickConfigs.registry</code>) for ArgoCD Image Updater, plus Argo Rollouts Blue-Green previews.</p>
+      </div>
+      <div class="card">
+        <h3>Schema Validation &amp; Tests</h3>
+        <p>Built-in <code>values.schema.json</code> (Draft 7) catches invalid types, enums, and inline secrets at <code>helm lint</code> / <code>helm template</code> time.</p>
+      </div>
+    </div>
+
+    <h2>Recent Releases</h2>
+    <table class="releases">
+      <thead>
+        <tr>
+          <th>Version</th>
+          <th>Highlights</th>
+          <th>Links</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>3.1.0</strong></td>
+          <td>External Secrets Operator v1 (<code>ExternalSecret</code> &amp; <code>SecretStore</code>), Gateway API &amp; Cilium, Quick Mounts, Probes Toggle, Job/CronJob Defaults, <code>values.schema.json</code></td>
+          <td><a href="https://github.com/cyanwind23/poly/releases/tag/poly-3.1.0">Release</a> &middot; <a href="https://github.com/cyanwind23/poly/blob/main/CHANGELOG.md">Changelog</a></td>
+        </tr>
+        <tr>
+          <td><strong>3.0.5</strong></td>
+          <td>Baseline v3 multi-app chart with Deployment/StatefulSet/DaemonSet/Job/CronJob, HPA, Argo Rollouts, Vault &amp; ServiceMonitor</td>
+          <td><a href="https://github.com/cyanwind23/poly/releases/tag/poly-3.0.5">Release</a></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <footer>
+      <span>Maintained by <strong>ThienNam23</strong> &middot; Apache-2.0 License</span>
+      <span><a href="https://github.com/cyanwind23/poly">github.com/cyanwind23/poly</a></span>
+    </footer>
+  </div>
+
+  <script>
+    function copyCode(id, btn) {
+      const text = document.getElementById(id).innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        const prev = btn.innerText;
+        btn.innerText = "Copied!";
+        setTimeout(() => { btn.innerText = prev; }, 1500);
+      });
+    }
+  </script>
+</body>
+</html>
